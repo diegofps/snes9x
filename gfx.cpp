@@ -215,7 +215,9 @@ void S9xEndScreenRefresh (void)
 
 			S9xControlEOF();
 
-			if (Settings.TakeScreenshot)
+			// S9xDoRawMovie(IPPU.RenderedScreenWidth, IPPU.RenderedScreenHeight);
+
+			// if (Settings.TakeScreenshot)
 				S9xDoScreenshot(IPPU.RenderedScreenWidth, IPPU.RenderedScreenHeight);
 
 			if (Settings.AutoDisplayMessages)
@@ -790,7 +792,12 @@ static void DrawOBJS (int D)
 			if (X == -256)
 				X = 256;
 
-			for (int t = tiles, O = Offset + X * PixWidth; X <= 256 && X < PPU.OBJ[S].HPos + GFX.OBJWidths[S]; TileX = (TileX + TileInc) & 0x0f, X += 8, O += 8 * PixWidth)
+			for 
+			(
+				int t = tiles, O = Offset + X * PixWidth; 
+				X <= 256 && X < PPU.OBJ[S].HPos + GFX.OBJWidths[S]; 
+				TileX = (TileX + TileInc) & 0x0f, X += 8, O += 8 * PixWidth
+			)
 			{
 				if (X < -7 || --t < 0 || X == 256)
 					continue;
@@ -800,6 +807,7 @@ static void DrawOBJS (int D)
 					if (x >= next_clip)
 					{
 						for (; clip < GFX.Clip[4].Count && GFX.Clip[4].Left[clip] <= x; clip++) ;
+						
 						if (clip == 0 || x >= GFX.Clip[4].Right[clip - 1])
 						{
 							DrawMode = 0;

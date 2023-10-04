@@ -223,7 +223,7 @@ namespace TileImpl {
 	//     and M is a test which if false means the pixel should be skipped.
 	//     Z1 is the "draw if Z1 > cur_depth".
 	//     Z2 is the "cur_depth = new_depth". OBJ need the two separate.
-	//     Pix is the pixel to draw.
+	//     Pix is the pixel to draw (as the index in the color palette).
 
 	#define OFFSET_IN_LINE \
 		uint32 OffsetInLine = Offset % GFX.RealPPL;
@@ -256,8 +256,10 @@ namespace TileImpl {
 				OFFSET_IN_LINE;
 				for (l = LineCount; l > 0; l--, bp += 8 * Pitch, Offset += GFX.PPL)
 				{
-					for (int x = 0; x < 8; x++) {
-						Pix = bp[x]; DRAW_PIXEL(x, Pix);
+					for (int x = 0; x < 8; x++) 
+					{
+						Pix = bp[x]; 
+						DRAW_PIXEL(x, Pix);
 					}
 				}
 			}
@@ -268,8 +270,10 @@ namespace TileImpl {
 				OFFSET_IN_LINE;
 				for (l = LineCount; l > 0; l--, bp += 8 * Pitch, Offset += GFX.PPL)
 				{
-					for (int x = 0; x < 8; x++) {
-						Pix = bp[7 - x]; DRAW_PIXEL(x, Pix);
+					for (int x = 0; x < 8; x++) 
+					{
+						Pix = bp[7 - x]; 
+						DRAW_PIXEL(x, Pix);
 					}
 				}
 			}
@@ -280,8 +284,10 @@ namespace TileImpl {
 				OFFSET_IN_LINE;
 				for (l = LineCount; l > 0; l--, bp -= 8 * Pitch, Offset += GFX.PPL)
 				{
-					for (int x = 0; x < 8; x++) {
-						Pix = bp[x]; DRAW_PIXEL(x, Pix);
+					for (int x = 0; x < 8; x++) 
+					{
+						Pix = bp[x]; 
+						DRAW_PIXEL(x, Pix);
 					}
 				}
 			}
@@ -291,8 +297,10 @@ namespace TileImpl {
 				OFFSET_IN_LINE;
 				for (l = LineCount; l > 0; l--, bp -= 8 * Pitch, Offset += GFX.PPL)
 				{
-					for (int x = 0; x < 8; x++) {
-						Pix = bp[7 - x]; DRAW_PIXEL(x, Pix);
+					for (int x = 0; x < 8; x++) 
+					{
+						Pix = bp[7 - x]; 
+						DRAW_PIXEL(x, Pix);
 					}
 				}
 			}

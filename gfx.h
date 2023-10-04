@@ -10,30 +10,31 @@
 #include "port.h"
 #include <vector>
 
-struct SGFX
+struct SGFX // The Virtual Screen, ZBuffer, screen color palettes, etc
 {
 	const uint32 Pitch = sizeof(uint16) * MAX_SNES_WIDTH;
 	const uint32 RealPPL = MAX_SNES_WIDTH; // true PPL of Screen buffer
 	const uint32 ScreenSize =  MAX_SNES_WIDTH * MAX_SNES_HEIGHT;
-	std::vector<uint16> ScreenBuffer;
-	uint16	*Screen;
-	uint16	*SubScreen;
-	uint8	*ZBuffer;
-	uint8	*SubZBuffer;
-	uint16	*S;
-	uint8	*DB;
-	uint16	*ZERO;
+
+	std::vector<uint16> ScreenBuffer; // .resize(MAX_SNES_WIDTH * (MAX_SNES_HEIGHT + 64))
+	uint16	*Screen;     // = &GFX.ScreenBuffer[GFX.RealPPL * 32]
+	uint16	*SubScreen;  // Size: ScreenSize * sizeof(uint16)
+	uint8	*ZBuffer;    // Size: ScreenSize
+	uint8	*SubZBuffer; // Size: ScreenSize
+	uint16	*S;          // = Screen, = SubScreen, += RealPPL, Screen + StartY * PPL
+	uint8	*DB;		 // "DepthBuffer", = ZBuffer, = SubZBuffer (This will receive the Z2 value when the pixel is drawn)
+	uint16	*ZERO;		 // Size: sizeof(uint16) * 0x10000
 	uint32	PPL;				// number of pixels on each of Screen buffer
 	uint32	LinesPerTile;		// number of lines in 1 tile (4 or 8 due to interlace)
-	uint16	*ScreenColors;		// screen colors for rendering main
+	uint16	*ScreenColors;		// screen colors for rendering main / This is a color palette
 	uint16	*RealScreenColors;	// screen colors, ignoring color window clipping
-	uint8	Z1;					// depth for comparison
-	uint8	Z2;					// depth to save
-	uint32	FixedColour;
+	uint8	Z1;					// depth of tile for comparison with DB - draw if Z1 > DB
+	uint8	Z2;					// depth of tile to save in DB after drawing
+	uint32	FixedColour;   // Used during blend (BLEND_ADD, BLEND_SUB, and BLEND_SATURATION) as the second color parameter. It comes from 
 	uint8	DoInterlace;
 	uint32	StartY;
 	uint32	EndY;
-	bool8	ClipColors;
+	bool8	ClipColors;            // This is true when the first bit of GFX.Clip[bg].DrawMode[clip - 1] is zero
 	uint8	OBJWidths[128];
 	uint8	OBJVisibleTiles[128];
 
@@ -130,6 +131,7 @@ extern struct SGFX	GFX;
 
 struct COLOR_ADD
 {
+	// Used when GFX.ClipColors is true
 	static alwaysinline uint16 fn(uint16 C1, uint16 C2)
 	{
 		const int RED_MASK = 0x1F << RED_SHIFT_BITS;
@@ -148,6 +150,7 @@ struct COLOR_ADD
 		return retval;
 	}
 
+	// Used when GFX.ClipColors is false
 	static alwaysinline uint16 fn1_2(uint16 C1, uint16 C2)
 	{
 		return ((((C1 & RGB_REMOVE_LOW_BITS_MASK) +
@@ -158,6 +161,7 @@ struct COLOR_ADD
 
 struct COLOR_ADD_BRIGHTNESS
 {
+	// Used when GFX.ClipColors is true
 	static alwaysinline uint16 fn(uint16 C1, uint16 C2)
 	{
 		return ((brightness_cap[ (C1 >> RED_SHIFT_BITS)           +  (C2 >> RED_SHIFT_BITS)          ] << RED_SHIFT_BITS)   |
@@ -169,6 +173,7 @@ struct COLOR_ADD_BRIGHTNESS
 				(brightness_cap[ (C1                      & 0x1f) +  (C2                      & 0x1f)]      ));
 	}
 
+	// Used when GFX.ClipColors is false
 	static alwaysinline uint16 fn1_2(uint16 C1, uint16 C2)
 	{
 		return COLOR_ADD::fn1_2(C1, C2);
@@ -178,6 +183,7 @@ struct COLOR_ADD_BRIGHTNESS
 
 struct COLOR_SUB
 {
+	// Used when GFX.ClipColors is true
 	static alwaysinline uint16 fn(uint16 C1, uint16 C2)
 	{
 		int rb1 = (C1 & (THIRD_COLOR_MASK | FIRST_COLOR_MASK)) | ((0x20 << 0) | (0x20 << RED_SHIFT_BITS));
@@ -193,6 +199,7 @@ struct COLOR_SUB
 		return retval;
 	}
 
+	// Used when GFX.ClipColors is false
 	static alwaysinline uint16 fn1_2(uint16 C1, uint16 C2)
 	{
 		return GFX.ZERO[((C1 | RGB_HI_BITS_MASKx2) -

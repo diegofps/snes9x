@@ -839,11 +839,12 @@ void S9xSetPPU (uint8 Byte, uint16 Address)
 				if (Byte != Memory.FillRAM[0x2132])
 				{
 					FLUSH_REDRAW();
-					if (Byte & 0x80)
+					// The first 5 bits represent the color. The next 3 bits indicate if the color must be saved to red, green, or blue.
+					if (Byte & 0x80) // Bit indicating blue (100_ ____)
 						PPU.FixedColourBlue  = Byte & 0x1f;
-					if (Byte & 0x40)
+					if (Byte & 0x40) // Bit indicating green (010_ ____)
 						PPU.FixedColourGreen = Byte & 0x1f;
-					if (Byte & 0x20)
+					if (Byte & 0x20) // Bit indicating red (001_ ____)
 						PPU.FixedColourRed   = Byte & 0x1f;
 				}
 

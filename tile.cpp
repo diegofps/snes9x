@@ -27,14 +27,14 @@ namespace {
 	uint8 ConvertTile2 (uint8 *pCache, uint32 TileAddr, uint32)
 	{
 		uint8	*tp      = &Memory.VRAM[TileAddr];
-		uint32			*p       = (uint32 *) pCache;
-		uint32			non_zero = 0;
-		uint8			line;
+		uint32	*p       = (uint32 *) pCache;
+		uint32	non_zero = 0;
+		uint8	line;
 
 		for (line = 8; line != 0; line--, tp += 2)
 		{
-			uint32			p1 = 0;
-			uint32			p2 = 0;
+			uint32	p1 = 0;
+			uint32	p2 = 0;
 			uint8	pix;
 
 			DOBIT( 0, 0);
@@ -50,9 +50,9 @@ namespace {
 	uint8 ConvertTile4 (uint8 *pCache, uint32 TileAddr, uint32)
 	{
 		uint8	*tp      = &Memory.VRAM[TileAddr];
-		uint32			*p       = (uint32 *) pCache;
-		uint32			non_zero = 0;
-		uint8			line;
+		uint32	*p       = (uint32 *) pCache;
+		uint32	non_zero = 0;
+		uint8	line;
 
 		for (line = 8; line != 0; line--, tp += 2)
 		{
@@ -75,14 +75,14 @@ namespace {
 	uint8 ConvertTile8 (uint8 *pCache, uint32 TileAddr, uint32)
 	{
 		uint8	*tp      = &Memory.VRAM[TileAddr];
-		uint32			*p       = (uint32 *) pCache;
-		uint32			non_zero = 0;
-		uint8			line;
+		uint32	*p       = (uint32 *) pCache;
+		uint32	non_zero = 0;
+		uint8	line;
 
 		for (line = 8; line != 0; line--, tp += 2)
 		{
-			uint32			p1 = 0;
-			uint32			p2 = 0;
+			uint32	p1 = 0;
+			uint32	p2 = 0;
 			uint8	pix;
 
 			DOBIT( 0, 0);
@@ -112,9 +112,9 @@ namespace {
 	uint8 ConvertTile2h_odd (uint8 *pCache, uint32 TileAddr, uint32 Tile)
 	{
 		uint8	*tp1     = &Memory.VRAM[TileAddr], *tp2;
-		uint32			*p       = (uint32 *) pCache;
-		uint32			non_zero = 0;
-		uint8			line;
+		uint32	*p       = (uint32 *) pCache;
+		uint32	non_zero = 0;
+		uint8	line;
 
 		if (Tile == 0x3ff)
 			tp2 = tp1 - (0x3ff << 4);
@@ -123,8 +123,8 @@ namespace {
 
 		for (line = 8; line != 0; line--, tp1 += 2, tp2 += 2)
 		{
-			uint32			p1 = 0;
-			uint32			p2 = 0;
+			uint32	p1 = 0;
+			uint32	p2 = 0;
 			uint8	pix;
 
 			DOBIT( 0, 0);
@@ -140,9 +140,9 @@ namespace {
 	uint8 ConvertTile4h_odd (uint8 *pCache, uint32 TileAddr, uint32 Tile)
 	{
 		uint8	*tp1     = &Memory.VRAM[TileAddr], *tp2;
-		uint32			*p       = (uint32 *) pCache;
-		uint32			non_zero = 0;
-		uint8			line;
+		uint32	*p       = (uint32 *) pCache;
+		uint32	non_zero = 0;
+		uint8	line;
 
 		if (Tile == 0x3ff)
 			tp2 = tp1 - (0x3ff << 5);
@@ -178,9 +178,9 @@ namespace {
 	uint8 ConvertTile2h_even (uint8 *pCache, uint32 TileAddr, uint32 Tile)
 	{
 		uint8	*tp1     = &Memory.VRAM[TileAddr], *tp2;
-		uint32			*p       = (uint32 *) pCache;
-		uint32			non_zero = 0;
-		uint8			line;
+		uint32	*p       = (uint32 *) pCache;
+		uint32	non_zero = 0;
+		uint8	line;
 
 		if (Tile == 0x3ff)
 			tp2 = tp1 - (0x3ff << 4);
@@ -189,8 +189,8 @@ namespace {
 
 		for (line = 8; line != 0; line--, tp1 += 2, tp2 += 2)
 		{
-			uint32			p1 = 0;
-			uint32			p2 = 0;
+			uint32	p1 = 0;
+			uint32	p2 = 0;
 			uint8	pix;
 
 			DOBIT( 0, 0);
@@ -206,9 +206,9 @@ namespace {
 	uint8 ConvertTile4h_even (uint8 *pCache, uint32 TileAddr, uint32 Tile)
 	{
 		uint8	*tp1     = &Memory.VRAM[TileAddr], *tp2;
-		uint32			*p       = (uint32 *) pCache;
-		uint32			non_zero = 0;
-		uint8			line;
+		uint32	*p       = (uint32 *) pCache;
+		uint32	non_zero = 0;
+		uint8	line;
 
 		if (Tile == 0x3ff)
 			tp2 = tp1 - (0x3ff << 5);
@@ -217,8 +217,8 @@ namespace {
 
 		for (line = 8; line != 0; line--, tp1 += 2, tp2 += 2)
 		{
-			uint32			p1 = 0;
-			uint32			p2 = 0;
+			uint32	p1 = 0;
+			uint32	p2 = 0;
 			uint8	pix;
 
 			DOBIT( 0, 0);
@@ -330,14 +330,16 @@ extern template struct TileImpl::Renderers<DrawTile16, HiresInterlace>;
 extern template struct TileImpl::Renderers<DrawClippedTile16, HiresInterlace>;
 extern template struct TileImpl::Renderers<DrawMosaicPixel16, HiresInterlace>;
 
+
+// Select the functions that will draw the tiles saved in the cached memory
 void S9xSelectTileRenderers (int BGMode, bool8 sub, bool8 obj)
 {
-	void	(**DT)		(uint32, uint32, uint32, uint32);
-	void	(**DCT)		(uint32, uint32, uint32, uint32, uint32, uint32);
-	void	(**DMP)		(uint32, uint32, uint32, uint32, uint32, uint32);
-	void	(**DB)		(uint32, uint32, uint32);
-	void	(**DM7BG1)	(uint32, uint32, int);
-	void	(**DM7BG2)	(uint32, uint32, int);
+	void	(**DT)		(uint32, uint32, uint32, uint32);				  // DrawTile
+	void	(**DCT)		(uint32, uint32, uint32, uint32, uint32, uint32); // DrawClippedTile
+	void	(**DMP)		(uint32, uint32, uint32, uint32, uint32, uint32); // DrawMosaicPixel
+	void	(**DB)		(uint32, uint32, uint32);                         // DrawBackDrop
+	void	(**DM7BG1)	(uint32, uint32, int);                            // DrawMode7MosaicBG1
+	void	(**DM7BG2)	(uint32, uint32, int);                            // DrawMode7MosaicBG2
 	bool8	M7M1, M7M2;
 
 	M7M1 = PPU.BGMosaic[0] && PPU.Mosaic > 1;
@@ -441,6 +443,8 @@ void S9xSelectTileRenderers (int BGMode, bool8 sub, bool8 obj)
 	GFX.DrawMode7BG2Math    = DM7BG2[i];
 }
 
+
+// Select the functions that will read the tiles from VRAM and save them in the cached memory
 void S9xSelectTileConverter (int depth, bool8 hires, bool8 sub, bool8 mosaic)
 {
 	switch (depth)

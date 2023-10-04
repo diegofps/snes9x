@@ -7,7 +7,11 @@
 #ifndef _PIXFORM_H_
 #define _PIXFORM_H_
 
-/* RGB565 format */
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// RGB565 format
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #define BUILD_PIXEL_RGB565(R, G, B)  (((int)(R) << 11) | ((int)(G) << 6) | (((int)(G) & 0x10) << 1) | (int)(B))
 #define BUILD_PIXEL2_RGB565(R, G, B) (((int)(R) << 11) | ((int)(G) << 5) | (int)(B))
 #define DECOMPOSE_PIXEL_RGB565(PIX, R, G, B) \
@@ -34,7 +38,11 @@
 #define THIRD_COLOR_MASK_RGB565   0x001F
 #define ALPHA_BITS_MASK_RGB565    0x0000
 
-/* RGB555 format */
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// RGB555 format
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #define BUILD_PIXEL_RGB555(R, G, B)  (((int)(R) << 10) | ((int)(G) << 5) | (int)(B))
 #define BUILD_PIXEL2_RGB555(R, G, B) (((int)(R) << 10) | ((int)(G) << 5) | (int)(B))
 #define DECOMPOSE_PIXEL_RGB555(PIX, R, G, B) \
@@ -60,6 +68,11 @@
 #define SECOND_COLOR_MASK_RGB555  0x03E0
 #define THIRD_COLOR_MASK_RGB555   0x001F
 #define ALPHA_BITS_MASK_RGB555    0x0000
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// Macros to convert high-level definitions to RGB555 or RGB565
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define CONCAT(X, Y) X##Y
 
@@ -89,29 +102,42 @@
 #define THIRD_COLOR_MASK_D(F)   CONCAT(THIRD_COLOR_MASK_, F)
 #define ALPHA_BITS_MASK_D(F)    CONCAT(ALPHA_BITS_MASK_, F)
 
-#define MAX_RED            MAX_RED_D(PIXEL_FORMAT)
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// High-level macro definitions.
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define MAX_RED            MAX_RED_D(PIXEL_FORMAT)   // Maximum color value shifted to origin (31 or 63)
 #define MAX_GREEN          MAX_GREEN_D(PIXEL_FORMAT)
 #define MAX_BLUE           MAX_BLUE_D(PIXEL_FORMAT)
-#define RED_SHIFT_BITS     RED_SHIFT_BITS_D(PIXEL_FORMAT)
+
+#define RED_SHIFT_BITS     RED_SHIFT_BITS_D(PIXEL_FORMAT)   // Bits to shift the color to origin, blue is always zero and not declared
 #define GREEN_SHIFT_BITS   GREEN_SHIFT_BITS_D(PIXEL_FORMAT)
-#define RED_LOW_BIT_MASK   RED_LOW_BIT_MASK_D(PIXEL_FORMAT)
-#define GREEN_LOW_BIT_MASK GREEN_LOW_BIT_MASK_D(PIXEL_FORMAT)
-#define BLUE_LOW_BIT_MASK  BLUE_LOW_BIT_MASK_D(PIXEL_FORMAT)
-#define RED_HI_BIT_MASK    RED_HI_BIT_MASK_D(PIXEL_FORMAT)
-#define GREEN_HI_BIT_MASK  GREEN_HI_BIT_MASK_D(PIXEL_FORMAT)
-#define BLUE_HI_BIT_MASK   BLUE_HI_BIT_MASK_D(PIXEL_FORMAT)
-#define FIRST_COLOR_MASK   FIRST_COLOR_MASK_D(PIXEL_FORMAT)
+
+#define RED_LOW_BIT_MASK   RED_LOW_BIT_MASK_D(PIXEL_FORMAT)   // 1 in the color's least significative bit
+#define GREEN_LOW_BIT_MASK GREEN_LOW_BIT_MASK_D(PIXEL_FORMAT) 
+#define BLUE_LOW_BIT_MASK  BLUE_LOW_BIT_MASK_D(PIXEL_FORMAT)  
+
+#define RED_HI_BIT_MASK    RED_HI_BIT_MASK_D(PIXEL_FORMAT)    // 1 in the color's most significative bit
+#define GREEN_HI_BIT_MASK  GREEN_HI_BIT_MASK_D(PIXEL_FORMAT)  
+#define BLUE_HI_BIT_MASK   BLUE_HI_BIT_MASK_D(PIXEL_FORMAT)   
+
+#define FIRST_COLOR_MASK   FIRST_COLOR_MASK_D(PIXEL_FORMAT)  // Bit masks for red, green, and blue (unshifted). Alpha is always zero, returning nothing
 #define SECOND_COLOR_MASK  SECOND_COLOR_MASK_D(PIXEL_FORMAT)
 #define THIRD_COLOR_MASK   THIRD_COLOR_MASK_D(PIXEL_FORMAT)
 #define ALPHA_BITS_MASK    ALPHA_BITS_MASK_D(PIXEL_FORMAT)
 
-#define GREEN_HI_BIT               ((MAX_GREEN + 1) >> 1)
-#define RGB_LOW_BITS_MASK          (RED_LOW_BIT_MASK | GREEN_LOW_BIT_MASK | BLUE_LOW_BIT_MASK)
-#define RGB_HI_BITS_MASK           (RED_HI_BIT_MASK | GREEN_HI_BIT_MASK | BLUE_HI_BIT_MASK)
-#define RGB_HI_BITS_MASKx2         ((RED_HI_BIT_MASK | GREEN_HI_BIT_MASK | BLUE_HI_BIT_MASK) << 1)
-#define RGB_REMOVE_LOW_BITS_MASK   (~RGB_LOW_BITS_MASK)
-#define FIRST_THIRD_COLOR_MASK     (FIRST_COLOR_MASK | THIRD_COLOR_MASK)
-#define TWO_LOW_BITS_MASK          (RGB_LOW_BITS_MASK | (RGB_LOW_BITS_MASK << 1))
-#define HIGH_BITS_SHIFTED_TWO_MASK (((FIRST_COLOR_MASK | SECOND_COLOR_MASK | THIRD_COLOR_MASK) & ~TWO_LOW_BITS_MASK) >> 2)
+
+#define GREEN_HI_BIT               ((MAX_GREEN + 1) >> 1) // Why? What for?
+#define RGB_LOW_BITS_MASK          (RED_LOW_BIT_MASK | GREEN_LOW_BIT_MASK | BLUE_LOW_BIT_MASK)     // RBG mask with the least significative bits
+#define RGB_HI_BITS_MASK           (RED_HI_BIT_MASK | GREEN_HI_BIT_MASK | BLUE_HI_BIT_MASK)        // RBG mask with the most significative bits
+#define RGB_HI_BITS_MASKx2         ((RED_HI_BIT_MASK | GREEN_HI_BIT_MASK | BLUE_HI_BIT_MASK) << 1) // RBG mask with bits after the most significative ones 
+
+#define RGB_REMOVE_LOW_BITS_MASK   (~RGB_LOW_BITS_MASK)                           // All ones, except the least siginificative ones
+#define FIRST_THIRD_COLOR_MASK     (FIRST_COLOR_MASK | THIRD_COLOR_MASK)          // Red and blue color masks
+#define TWO_LOW_BITS_MASK          (RGB_LOW_BITS_MASK | (RGB_LOW_BITS_MASK << 1)) // The tow least significative bits on every color
+
+// The 3 or 4 highest bits on each color shifted to its relative origin (Unused)
+#define HIGH_BITS_SHIFTED_TWO_MASK (((FIRST_COLOR_MASK | SECOND_COLOR_MASK | THIRD_COLOR_MASK) & ~TWO_LOW_BITS_MASK) >> 2) 
 
 #endif // _PIXFORM_H_

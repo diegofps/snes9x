@@ -65,7 +65,7 @@ CMemory					Memory;
 char	String[513];
 uint8	OpenBus = 0;
 uint8	*HDMAMemPointers[8];
-uint16	BlackColourMap[256];
+uint16	BlackColourMap[256];        // 256 zeros, initialized in gfx.cpp:48
 uint16	DirectColourMaps[8][256];
 
 SnesModel	M1SNES = { 1, 3, 2 };

@@ -99,7 +99,7 @@ struct SPPU
 		uint8	BGSize;
 		uint16	NameBase;
 		uint16	SCSize;
-	}	BG[4];
+	}	BG[4]; // Up to 4 backgrounds, depending on the mode selected
 
 	uint8	BGMode;
 	uint8	BG3Priority;
@@ -176,9 +176,11 @@ struct SPPU
 
 	bool8	ForcedBlanking;
 
-	uint8	FixedColourRed;
+	// Used to build FixedColour. These three values are initialized with 0 and then reassigned in ppu.cpp:840
+	uint8	FixedColourRed;		
 	uint8	FixedColourGreen;
 	uint8	FixedColourBlue;
+
 	uint8	Brightness;
 	uint16	ScreenHeight;
 

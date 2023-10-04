@@ -7,6 +7,7 @@
 #ifndef _SCREENSHOT_H_
 #define _SCREENSHOT_H_
 
+void S9xDoRawMovie(int const width, int const height);
 bool8 S9xDoScreenshot (int, int);
 
 #endif

@@ -9,16 +9,39 @@
 
 namespace TileImpl {
 
+	// N : Pixel idx
+	// M : Mask to paint the pixel or not
+	// Offset : position in screen to paint
+	// OffsetInLine : position in tile we are painting?
+	// Pix : The pixel category (will be mapped using the color palette in RealScreenColors)
+	// Z1 : Current depth. Draw if Z1 >= old depth in the DepthBuffer (DB)
+	// Z2 : If you draw, save this as the new depth in the depth buffer
+
 	template<class MATH, class BPSTART>
 	void HiresBase<MATH, BPSTART>::Draw(int N, int M, uint32 Offset, uint32 OffsetInLine, uint8 Pix, uint8 Z1, uint8 Z2)
 	{
 		if (Z1 > GFX.DB[Offset + 2 * N] && (M))
 		{
-			GFX.S[Offset + 2 * N + 1] = MATH::Calc(GFX.ScreenColors[Pix], GFX.SubScreen[Offset + 2 * N], GFX.SubZBuffer[Offset + 2 * N]);
+			GFX.S[Offset + 2 * N + 1] = MATH::Calc(
+					GFX.ScreenColors[Pix], 
+					GFX.SubScreen[Offset + 2 * N], 
+					GFX.SubZBuffer[Offset + 2 * N]
+			);
+
 			if ((OffsetInLine + 2 * N ) != (SNES_WIDTH - 1) << 1)
-				GFX.S[Offset + 2 * N + 2] = MATH::Calc((GFX.ClipColors ? 0 : GFX.SubScreen[Offset + 2 * N + 2]), GFX.RealScreenColors[Pix], GFX.SubZBuffer[Offset + 2 * N]);
+				GFX.S[Offset + 2 * N + 2] = MATH::Calc(
+						(GFX.ClipColors ? 0 : GFX.SubScreen[Offset + 2 * N + 2]), 
+						GFX.RealScreenColors[Pix], 
+						GFX.SubZBuffer[Offset + 2 * N]
+				);
+
 			if ((OffsetInLine + 2 * N) == 0 || (OffsetInLine + 2 * N) == GFX.RealPPL)
-				GFX.S[Offset + 2 * N] = MATH::Calc((GFX.ClipColors ? 0 : GFX.SubScreen[Offset + 2 * N]), GFX.RealScreenColors[Pix], GFX.SubZBuffer[Offset + 2 * N]);
+				GFX.S[Offset + 2 * N] = MATH::Calc(
+						(GFX.ClipColors ? 0 : GFX.SubScreen[Offset + 2 * N]), 
+						GFX.RealScreenColors[Pix], 
+						GFX.SubZBuffer[Offset + 2 * N]
+				);
+
 			GFX.DB[Offset + 2 * N] = GFX.DB[Offset + 2 * N + 1] = Z2;
 		}
 	}
