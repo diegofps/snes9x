@@ -66,7 +66,7 @@ char	String[513];
 uint8	OpenBus = 0;
 uint8	*HDMAMemPointers[8];
 uint16	BlackColourMap[256];        // 256 zeros, initialized in gfx.cpp:48
-uint16	DirectColourMaps[8][256];
+uint16	DirectColourMaps[8][256];   // We may have up to 8 color palettes at the same time
 
 SnesModel	M1SNES = { 1, 3, 2 };
 SnesModel	M2SNES = { 2, 4, 3 };

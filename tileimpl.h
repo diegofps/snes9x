@@ -16,6 +16,16 @@ extern struct SLineMatrixData	LineMatrixData[240];
 
 namespace TileImpl {
 
+	/* 
+		These are known as BPSTART templates. They are used to set the Pitch value and convert StartLine. 
+
+		Names: BPSTART, BPProgressive, BPInterlace
+		Pitch: Unknown
+		StartLine: Unknown
+		BG.InterlaceLine: Unknown
+		They are typically seen as PIXEL template arguments.
+	*/
+
 	struct BPProgressive
 	{
 		enum { Pitch = 1 };
@@ -30,6 +40,18 @@ namespace TileImpl {
 		static alwaysinline uint32 Get(uint32 StartLine) { return StartLine * 2 + BG.InterlaceLine; }
 	};
 
+
+	/*
+		These are all PIXEL templates. They are the ones that actually draw (write) to the pixel on the screen. 
+		They take into consideration the depth, convert the pseudo-colors to real colors using the color 
+		palette and update the ZBuffer after painting the pixels.
+		
+		* Names: PIXEL, Normal1x1, Normal2x1, Interlace, Hires, HiresInterlace
+		* Their implementations are defined in the files tileimpl-*x1.cpp
+		* MATH: 
+		* BPSTART: Defined above, these may be BPProgressive or BPInterlace
+		* They are typically seen as TILE template arguments.
+	*/
 
 	// The 1x1 pixel plotter, for speedhacking modes.
 	template<class MATH, class BPSTART>
@@ -57,6 +79,7 @@ namespace TileImpl {
 
 	template<class MATH>
 	struct Normal2x1 : public Normal2x1Base<MATH, BPProgressive> {};
+
 	template<class MATH>
 	struct Interlace : public Normal2x1Base<MATH, BPInterlace> {};
 
@@ -80,9 +103,17 @@ namespace TileImpl {
 
 	template<class MATH>
 	struct Hires : public HiresBase<MATH, BPProgressive> {};
+
 	template<class MATH>
 	struct HiresInterlace : public HiresBase<MATH, BPInterlace> {};
 
+
+	/*
+		This will remember if the tile is loaded to memory or not. If it is not, it will use BG.ConvertTile* to load it.
+
+		* The images are stored in BG.BufferedFlip and BG.Buffered, using pseudo colors.
+		* The ConvertTile* functions are selected in S9xSelectTileConverter, line 463.
+	*/
 
 	class CachedTile
 	{
@@ -100,13 +131,13 @@ namespace TileImpl {
 			{
 				pCache = &BG.BufferFlip[TileNumber << 6];
 				if (!BG.BufferedFlip[TileNumber])
-					BG.BufferedFlip[TileNumber] = BG.ConvertTileFlip(pCache, TileAddr, Tile & 0x3ff);
+					BG.BufferedFlip[TileNumber] = BG.ConvertTileFlip(pCache, TileAddr, Tile & 0x3ff); // This is one of the functions from tile.cpp
 			}
 			else
 			{
 				pCache = &BG.Buffer[TileNumber << 6];
 				if (!BG.Buffered[TileNumber])
-					BG.Buffered[TileNumber] = BG.ConvertTile(pCache, TileAddr, Tile & 0x3ff);
+					BG.Buffered[TileNumber] = BG.ConvertTile(pCache, TileAddr, Tile & 0x3ff); // This is one of the functions from tile.cpp
 			}
 		}
 
@@ -115,14 +146,20 @@ namespace TileImpl {
 			return ((Tile & H_FLIP) ? BG.BufferedFlip[TileNumber] : BG.Buffered[TileNumber]) == BLANK_TILE;
 		}
 
+		/*
+			Updates the colorPalette, selecting the option defined in the Tile.
+
+			* It seems like Tile also contains a reference to the index of the color palette to be used.
+			* According to DirectColourMaps, we may have up to 8 color palettes at the same time.
+			* PaletteShift is initialized in S9xSelectTileConverter (tile.cpp:463). It depends on the depth value and may be 0, 10-4, or 10-2.
+		*/
 		alwaysinline void SelectPalette() const
 		{
 			if (BG.DirectColourMode)
-			{
 				GFX.RealScreenColors = DirectColourMaps[(Tile >> 10) & 7];
-			}
 			else
 				GFX.RealScreenColors = &IPPU.ScreenColors[((Tile >> BG.PaletteShift) & BG.PaletteMask) + BG.StartPalette];
+			
 			GFX.ScreenColors = GFX.ClipColors ? BlackColourMap : GFX.RealScreenColors;
 		}
 
@@ -138,6 +175,19 @@ namespace TileImpl {
 		uint32 TileAddr;
 	};
 
+/*
+	These define the MATH templates. They define how to draw the pixels in the screen, blending the tile being drawn with the pixels in 
+	the screen buffer, or not, or using ClipColors to process things differently. 
+	
+	* Names: MATH, NOMATH, REGMATH, MATHF1_2, MATHS1_2.
+	* Calc: Main method, called from the template name.
+	* Main: Color of the pixel we want to draw.
+	* Sub: Color already present in the screen buffer.
+	* SD: Unknown, but is connected to the Z Buffer. It is always ANDed to the constant 0x20 to choose between color Sub or GFX.FixedColour.
+	* Structs ending in 1_2 will look at GFX.ClipColors to decide whether to call fn or fn1_2.
+	* NOMATH | Blend_None: means no blending, just set the new values.
+	* They are typically seen as PIXEL template arguments, defined above.
+*/
 
 	struct NOMATH
 	{
@@ -183,14 +233,22 @@ namespace TileImpl {
 	typedef MATHS1_2<COLOR_SUB> Blend_SubS1_2;
 	typedef MATHS1_2<COLOR_ADD_BRIGHTNESS> Blend_AddS1_2Brightness;
 
+
+	/*
+		The renderers are selected in S9xSelectTileRenderers, located in tile.cpp:350
+
+		TILE: One of DrawTile16, DrawClippedTile16, DrawMosaicPixel16, DrawBackdrop16, DrawMode7MosaicBG1, ... (defined bellow). They define how to paint the tile's pixels.
+		PIXEL: One of Normal1x1, Normal2x1, Interlace, Hires, HiresInterlace (defined in the beginning of this file). They define the pixel format.
+		MATH: The template argument of Pixel (defined above). They define how to blend the image with the pixels already on screen.
+	*/
 	template<
 		template<class PIXEL_> class TILE,
 		template<class MATH> class PIXEL
 	>
 	struct Renderers
 	{
-		enum { Pitch = PIXEL<Blend_None>::Pitch };
-		typedef typename TILE< PIXEL<Blend_None> >::call_t call_t;
+		enum { Pitch = PIXEL<Blend_None>::Pitch }; // Pitch is usually 1 or 2
+		typedef typename TILE< PIXEL<Blend_None> >::call_t call_t; // The number and type of parameters of call_t is dynamic (mad)
 
 		static call_t Functions[9];
 	};
@@ -214,6 +272,20 @@ namespace TileImpl {
 	};
 	#endif
 
+	/*
+		These functions will draw the tiles in the screen. They handle differences such as: Simple drawing, 
+		Clipping, Mosaic, Backdrop, and Mode7.
+
+		* Names: TILE, DrawTile16, DrawClippedTile16, DrawMosaicPixel16, DrawBackdrop16, DrawMode7MosaicBG1, ...
+		* Draw: main function, called from template arguments
+		* Tile: The tile to be drawn. This contains the tile address and two bits indicating vertical and horizontal flips.
+		* Offset: This is the x,y coordinate to draw the tile in the screen, decomposed as a single offset. For every line, it will jump GFX.PPL, the screen size.
+		* StartLine: Unknown. 
+		* LineCount: The number of lines in the tile to be draw. Probably called with 8, 4, or 2. The heights of the tile as imported by ConvertTile in tile.cpp.
+		* PIXEL: One of Hires or HiresInterlace
+
+	*/
+
 	// Basic routine to render an unclipped tile.
 	// Input parameters:
 	//     bpstart_t = either StartLine or (StartLine * 2 + BG.InterlaceLine),
@@ -227,6 +299,7 @@ namespace TileImpl {
 
 	#define OFFSET_IN_LINE \
 		uint32 OffsetInLine = Offset % GFX.RealPPL;
+		
 	#define DRAW_PIXEL(N, M) PIXEL::Draw(N, M, Offset, OffsetInLine, Pix, Z1, Z2)
 	#define Z1	GFX.Z1
 	#define Z2	GFX.Z2
@@ -237,7 +310,7 @@ namespace TileImpl {
 		typedef void (*call_t)(uint32, uint32, uint32, uint32);
 
 		enum { Pitch = PIXEL::Pitch };
-		typedef typename PIXEL::bpstart_t bpstart_t;
+		typedef typename PIXEL::bpstart_t bpstart_t; // This is BPProgressive or BPInterlace (defined at the top of this file)
 
 		static void Draw(uint32 Tile, uint32 Offset, uint32 StartLine, uint32 LineCount)
 		{
@@ -474,9 +547,9 @@ namespace TileImpl {
 	// (or interlace at all, really).
 	// The backdrop is always depth = 1, so Z1 = Z2 = 1. And backdrop is always color 0.
 
-	#define Z1				1
-	#define Z2				1
-	#define Pix				0
+	#define Z1	1
+	#define Z2	1
+	#define Pix	0
 
 	template<class PIXEL>
 	struct DrawBackdrop16
@@ -514,7 +587,7 @@ namespace TileImpl {
 	//     MASK is 0xff or 0x7f, the 'color' portion of the pixel.
 	// We define Z1/Z2 to either be constant 5 or to vary depending on the 'priority' portion of the pixel.
 
-	#define CLIP_10_BIT_SIGNED(a)	(((a) & 0x2000) ? ((a) | ~0x3ff) : ((a) & 0x3ff))
+	#define CLIP_10_BIT_SIGNED(a) (((a) & 0x2000) ? ((a) | ~0x3ff) : ((a) & 0x3ff))
 
 	#define DRAW_PIXEL(N, M) PIXEL::Draw(N, M, Offset, OffsetInLine, Pix, OP::Z1(D, b), OP::Z2(D, b))
 
@@ -546,7 +619,7 @@ namespace TileImpl {
 
 		static void Draw(uint32 Left, uint32 Right, int D)
 		{
-			uint8	*VRAM1 = Memory.VRAM + 1;
+			uint8 *VRAM1 = Memory.VRAM + 1;
 
 			if (OP::DCMODE())
 			{

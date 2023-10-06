@@ -10,19 +10,21 @@
 namespace TileImpl {
 
 	// N : Pixel idx
-	// M : Mask to paint the pixel or not
+	// M : Mask to paint the pixel or not. In tileimpl.h, M is the same as Pix, meaning it will draw if Pix is not 0 (SNES uses 0 as transparent)
 	// Offset : position in screen to paint
 	// OffsetInLine : position in tile we are painting?
 	// Pix : The pixel category (will be mapped using the color palette in RealScreenColors)
 	// Z1 : Current depth. Draw if Z1 >= old depth in the DepthBuffer (DB)
 	// Z2 : If you draw, save this as the new depth in the depth buffer
 
+	// BPSTART: One of BPProgressive or BPInterlace
+	// MATH: One of NOMATH | REGMATH | MATHF1_2 | MATHS1_2
 	template<class MATH, class BPSTART>
 	void HiresBase<MATH, BPSTART>::Draw(int N, int M, uint32 Offset, uint32 OffsetInLine, uint8 Pix, uint8 Z1, uint8 Z2)
 	{
 		if (Z1 > GFX.DB[Offset + 2 * N] && (M))
 		{
-			GFX.S[Offset + 2 * N + 1] = MATH::Calc(
+			GFX.S[Offset + 2 * N + 1] = MATH::Calc( // Check tileimpl.h:141
 					GFX.ScreenColors[Pix], 
 					GFX.SubScreen[Offset + 2 * N], 
 					GFX.SubZBuffer[Offset + 2 * N]

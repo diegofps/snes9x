@@ -10,12 +10,26 @@ using namespace TileImpl;
 
 namespace {
 
+	// Memoization to avoid recalculating these values
 	uint32	pixbit[8][16];
 	uint8	hrbit_odd[256];
 	uint8	hrbit_even[256];
 
 	// Here are the tile converters, selected by S9xSelectTileConverter().
 	// Really, except for the definition of DOBIT and the number of times it is called, they're all the same.
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Half-height mode - Pixels with half the height (4 lines). Represented by 4h sufix in function names
+	// Quarter-height mode - Pixels with a quarter the height (2 lines). Represented by 2h sufix in function names
+	// 
+	// Sequence-numbered tiles - Tiles are not splitted, every pixel comes in sequence. (ConvertTile[248])
+	// Even-numbered tiles - Tiles are split in two (ex. 8x8 is split in two 4x8, in sequence). The first subtile is the first part. (ConvertTile[24]h_even)
+	// Odd-numbered tiles - Tiles are split in two (ex. 8x8 is split in two 4x8, in sequence). The second subtile is the first part. (ConvertTile[24]h_odd)
+	// 
+	// n : the pixel address in the input buffer, tp
+	// i : the shift value, 0 to 7 (the bit position mentioned by ChatGPT)
+	// pix : byte sized data, we pass its first or later 4 bits as column parameter to pixbit (16 addressable positions)
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	#define DOBIT(n, i) \
 		if ((pix = *(tp + (n)))) \
@@ -139,7 +153,8 @@ namespace {
 
 	uint8 ConvertTile4h_odd (uint8 *pCache, uint32 TileAddr, uint32 Tile)
 	{
-		uint8	*tp1     = &Memory.VRAM[TileAddr], *tp2;
+		uint8	*tp2;
+		uint8	*tp1     = &Memory.VRAM[TileAddr];
 		uint32	*p       = (uint32 *) pCache;
 		uint32	non_zero = 0;
 		uint8	line;
@@ -151,8 +166,8 @@ namespace {
 
 		for (line = 8; line != 0; line--, tp1 += 2, tp2 += 2)
 		{
-			uint32			p1 = 0;
-			uint32			p2 = 0;
+			uint32	p1 = 0;
+			uint32	p2 = 0;
 			uint8	pix;
 
 			DOBIT( 0, 0);
@@ -185,7 +200,7 @@ namespace {
 		if (Tile == 0x3ff)
 			tp2 = tp1 - (0x3ff << 4);
 		else
-			tp2 = tp1 + (1 << 4);
+			tp2 = tp1 + (1 << 4); // tp1 + 16
 
 		for (line = 8; line != 0; line--, tp1 += 2, tp2 += 2)
 		{
@@ -213,7 +228,7 @@ namespace {
 		if (Tile == 0x3ff)
 			tp2 = tp1 - (0x3ff << 5);
 		else
-			tp2 = tp1 + (1 << 5);
+			tp2 = tp1 + (1 << 5); // tp1 + 32
 
 		for (line = 8; line != 0; line--, tp1 += 2, tp2 += 2)
 		{
@@ -245,7 +260,7 @@ void S9xInitTileRenderer (void)
 	{
 		uint32	b = 0;
 
-	#ifdef LSB_FIRST
+	#ifdef LSB_FIRST // Least significant bit first
 		if (i & 8)
 			b |= 1;
 		if (i & 4)

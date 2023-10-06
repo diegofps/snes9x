@@ -13,7 +13,7 @@
 struct SGFX // The Virtual Screen, ZBuffer, screen color palettes, etc
 {
 	const uint32 Pitch = sizeof(uint16) * MAX_SNES_WIDTH;
-	const uint32 RealPPL = MAX_SNES_WIDTH; // true PPL of Screen buffer
+	const uint32 RealPPL = MAX_SNES_WIDTH; // true PPL of Screen buffer, Pixels Per Line?
 	const uint32 ScreenSize =  MAX_SNES_WIDTH * MAX_SNES_HEIGHT;
 
 	std::vector<uint16> ScreenBuffer; // .resize(MAX_SNES_WIDTH * (MAX_SNES_HEIGHT + 64))
@@ -24,13 +24,13 @@ struct SGFX // The Virtual Screen, ZBuffer, screen color palettes, etc
 	uint16	*S;          // = Screen, = SubScreen, += RealPPL, Screen + StartY * PPL
 	uint8	*DB;		 // "DepthBuffer", = ZBuffer, = SubZBuffer (This will receive the Z2 value when the pixel is drawn)
 	uint16	*ZERO;		 // Size: sizeof(uint16) * 0x10000
-	uint32	PPL;				// number of pixels on each of Screen buffer
+	uint32	PPL;				// number of pixels on each Screen buffer
 	uint32	LinesPerTile;		// number of lines in 1 tile (4 or 8 due to interlace)
 	uint16	*ScreenColors;		// screen colors for rendering main / This is a color palette
 	uint16	*RealScreenColors;	// screen colors, ignoring color window clipping
 	uint8	Z1;					// depth of tile for comparison with DB - draw if Z1 > DB
 	uint8	Z2;					// depth of tile to save in DB after drawing
-	uint32	FixedColour;   // Used during blend (BLEND_ADD, BLEND_SUB, and BLEND_SATURATION) as the second color parameter. It comes from 
+	uint32	FixedColour;   // Used during blend (BLEND_ADD, BLEND_SUB, and BLEND_SATURATION) as the second color parameter. It comes from PPU.FixedColour(Red|Green|Blue).
 	uint8	DoInterlace;
 	uint32	StartY;
 	uint32	EndY;
@@ -129,6 +129,13 @@ extern struct SGFX	GFX;
 #define V_FLIP		0x8000
 #define BLANK_TILE	2
 
+/*
+	These are used when the emulator is about to draw the pixels in the screen buffer. COLOR_ADD, 
+	COLOR_SUB, and COLOR_ADD_BRIGHTNESS are the main blending techniques used to create transparency 
+	and special effects. 
+
+	* These structs will only calculate the pixel values. The pixels are drawn in tileimpl.h, using many other abstractions.
+*/
 struct COLOR_ADD
 {
 	// Used when GFX.ClipColors is true
