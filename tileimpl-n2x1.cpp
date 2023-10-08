@@ -15,7 +15,12 @@ namespace TileImpl {
 		(void) OffsetInLine;
 		if (Z1 > GFX.DB[Offset + 2 * N] && (M))
 		{
-			GFX.S[Offset + 2 * N] = GFX.S[Offset + 2 * N + 1] = MATH::Calc(GFX.ScreenColors[Pix], GFX.SubScreen[Offset + 2 * N], GFX.SubZBuffer[Offset + 2 * N]);
+			GFX.S[Offset + 2 * N] = GFX.S[Offset + 2 * N + 1] = MATH::Calc(
+					GFX.ScreenColors[Pix], 
+					GFX.SubScreen[Offset + 2 * N], 
+					GFX.SubZBuffer[Offset + 2 * N]
+			);
+
 			GFX.DB[Offset + 2 * N] = GFX.DB[Offset + 2 * N + 1] = Z2;
 		}
 	}

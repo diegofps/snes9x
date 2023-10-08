@@ -895,6 +895,7 @@ static void S9xDeinterleaveGD24 (int size, uint8 *base)
 
 bool8 CMemory::Init (void)
 {
+	// These will hold the tile pseudo pixels
 	IPPU.TileCache[TILE_2BIT]       = (uint8 *) malloc(MAX_2BIT_TILES * 64);
 	IPPU.TileCache[TILE_4BIT]       = (uint8 *) malloc(MAX_4BIT_TILES * 64);
 	IPPU.TileCache[TILE_8BIT]       = (uint8 *) malloc(MAX_8BIT_TILES * 64);
@@ -903,6 +904,7 @@ bool8 CMemory::Init (void)
 	IPPU.TileCache[TILE_4BIT_EVEN]  = (uint8 *) malloc(MAX_4BIT_TILES * 64);
 	IPPU.TileCache[TILE_4BIT_ODD]   = (uint8 *) malloc(MAX_4BIT_TILES * 64);
 
+	// These will hold flags indicating if the tile is not loaded, loaded, or is empty
 	IPPU.TileCached[TILE_2BIT]      = (uint8 *) malloc(MAX_2BIT_TILES);
 	IPPU.TileCached[TILE_4BIT]      = (uint8 *) malloc(MAX_4BIT_TILES);
 	IPPU.TileCached[TILE_8BIT]      = (uint8 *) malloc(MAX_8BIT_TILES);

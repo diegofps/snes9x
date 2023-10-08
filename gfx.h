@@ -16,19 +16,19 @@ struct SGFX // The Virtual Screen, ZBuffer, screen color palettes, etc
 	const uint32 RealPPL = MAX_SNES_WIDTH; // true PPL of Screen buffer, Pixels Per Line?
 	const uint32 ScreenSize =  MAX_SNES_WIDTH * MAX_SNES_HEIGHT;
 
-	std::vector<uint16> ScreenBuffer; // .resize(MAX_SNES_WIDTH * (MAX_SNES_HEIGHT + 64))
-	uint16	*Screen;     // = &GFX.ScreenBuffer[GFX.RealPPL * 32]
-	uint16	*SubScreen;  // Size: ScreenSize * sizeof(uint16)
-	uint8	*ZBuffer;    // Size: ScreenSize
-	uint8	*SubZBuffer; // Size: ScreenSize
-	uint16	*S;          // = Screen, = SubScreen, += RealPPL, Screen + StartY * PPL
-	uint8	*DB;		 // "DepthBuffer", = ZBuffer, = SubZBuffer (This will receive the Z2 value when the pixel is drawn)
-	uint16	*ZERO;		 // Size: sizeof(uint16) * 0x10000
-	uint32	PPL;				// number of pixels on each Screen buffer
-	uint32	LinesPerTile;		// number of lines in 1 tile (4 or 8 due to interlace)
-	uint16	*ScreenColors;		// screen colors for rendering main / This is a color palette
-	uint16	*RealScreenColors;	// screen colors, ignoring color window clipping
-	uint8	Z1;					// depth of tile for comparison with DB - draw if Z1 > DB
+	std::vector<uint16> ScreenBuffer; // The screen buffer + 64 lines, .resize(MAX_SNES_WIDTH * (MAX_SNES_HEIGHT + 64))
+	uint16	*Screen;     // The main screen buffer. Points to the screen buffer + 32 lines, = &GFX.ScreenBuffer[GFX.RealPPL * 32]
+	uint16	*SubScreen;  // The sub screen buffer. Size: ScreenSize * sizeof(uint16)
+	uint8	*ZBuffer;    // The depth buffer for the main screen. Size: ScreenSize
+	uint8	*SubZBuffer; // The depth buffer for the sub screen. Size: ScreenSize
+	uint16	*S;          // The screen or subscreen buffer, = Screen, = SubScreen, += RealPPL, Screen + StartY * PPL
+	uint8	*DB;		 // The ZBuffer or SubZBuffer, i.e., the pixel depths for the screen being drawn on. "DepthBuffer", = ZBuffer, = SubZBuffer (This will receive the Z2 value when the pixel is drawn)
+	uint16	*ZERO;		 // Lookup table for 1/2 color subtraction. Size: sizeof(uint16) * 0x10000
+	uint32	PPL;				// Number of pixels in a line of the Screen buffer considering interlace. When interlace is on, this will be twice the RealPPL.
+	uint32	LinesPerTile;		// Number of lines in a tile (4 or 8 due to interlace)
+	uint16	*ScreenColors;		// Screen colors for rendering main / This is a color palette
+	uint16	*RealScreenColors;	// Screen colors, ignoring color window clipping
+	uint8	Z1;					// Depth of tile for comparison with DB - draw if Z1 > DB
 	uint8	Z2;					// depth of tile to save in DB after drawing
 	uint32	FixedColour;   // Used during blend (BLEND_ADD, BLEND_SUB, and BLEND_SATURATION) as the second color parameter. It comes from PPU.FixedColour(Red|Green|Blue).
 	uint8	DoInterlace;
@@ -70,6 +70,12 @@ struct SGFX // The Virtual Screen, ZBuffer, screen color palettes, etc
 	char	FrameDisplayString[256];
 };
 
+struct XGFX // The Virtual Screen, ZBuffer, screen color palettes, etc
+{
+	uint8   *DumpedTileWithPalette;	// This will hold the pair (tile, colorPalette)
+	uint32  DumpedTileWithPaletteSize;
+};
+
 struct SBG
 {
 	uint8	(*ConvertTile) (uint8 *, uint32, uint32);
@@ -85,6 +91,7 @@ struct SBG
 	uint32	SCBase;
 
 	uint32	StartPalette;
+	uint32	PaletteSize;
 	uint32	PaletteShift;
 	uint32	PaletteMask;
 	uint8	EnableMath;
@@ -124,6 +131,7 @@ extern uint8		mul_brightness[16][32];
 extern uint8		brightness_cap[64];
 extern struct SBG	BG;
 extern struct SGFX	GFX;
+extern struct XGFX	XGFX;
 
 #define H_FLIP		0x4000
 #define V_FLIP		0x8000

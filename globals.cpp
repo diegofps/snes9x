@@ -28,6 +28,7 @@ struct InternalPPU		IPPU;
 struct SDMA				DMA[8];
 struct STimings			Timings;
 struct SGFX				GFX;
+struct XGFX				XGFX;
 struct SBG				BG;
 struct SLineData		LineData[240];
 struct SLineMatrixData	LineMatrixData[240];

@@ -11,16 +11,19 @@
 #include "ppu.h"
 #include "tile.h"
 
+#include "superres.h"
+
 extern struct SLineMatrixData	LineMatrixData[240];
 
 
 namespace TileImpl {
 
 	/* 
-		These are known as BPSTART templates. They are used to set the Pitch value and convert StartLine. 
+		These are known as BPSTART templates. They are used to handle interlace particularities, 
+		like setting the Pitch value or converting StartLine. 
 
 		Names: BPSTART, BPProgressive, BPInterlace
-		Pitch: Unknown
+		Pitch: 2 if using interlace else 1. This is used to decide how many lines to jump during a PIXEL draw. // bp += 8 * Pitch
 		StartLine: Unknown
 		BG.InterlaceLine: Unknown
 		They are typically seen as PIXEL template arguments.
@@ -44,7 +47,7 @@ namespace TileImpl {
 	/*
 		These are all PIXEL templates. They are the ones that actually draw (write) to the pixel on the screen. 
 		They take into consideration the depth, convert the pseudo-colors to real colors using the color 
-		palette and update the ZBuffer after painting the pixels.
+		palette and update the ZBuffer after painting the pixels. They are the ones that unite the main and sub screens.
 		
 		* Names: PIXEL, Normal1x1, Normal2x1, Interlace, Hires, HiresInterlace
 		* Their implementations are defined in the files tileimpl-*x1.cpp
@@ -113,6 +116,8 @@ namespace TileImpl {
 
 		* The images are stored in BG.BufferedFlip and BG.Buffered, using pseudo colors.
 		* The ConvertTile* functions are selected in S9xSelectTileConverter, line 463.
+		* Buffer, BufferFlip, Buffered, and BufferedFlip: They change all the time, depending on the layer number and BGMode.
+		* TileAddress: Change during each call to DrawBackground.
 	*/
 
 	class CachedTile
@@ -131,13 +136,13 @@ namespace TileImpl {
 			{
 				pCache = &BG.BufferFlip[TileNumber << 6];
 				if (!BG.BufferedFlip[TileNumber])
-					BG.BufferedFlip[TileNumber] = BG.ConvertTileFlip(pCache, TileAddr, Tile & 0x3ff); // This is one of the functions from tile.cpp
+					BG.BufferedFlip[TileNumber] = BG.ConvertTileFlip(pCache, TileAddr, Tile & 0x3ff); // This is one of the functions in tile.cpp
 			}
 			else
 			{
 				pCache = &BG.Buffer[TileNumber << 6];
 				if (!BG.Buffered[TileNumber])
-					BG.Buffered[TileNumber] = BG.ConvertTile(pCache, TileAddr, Tile & 0x3ff); // This is one of the functions from tile.cpp
+					BG.Buffered[TileNumber] = BG.ConvertTile(pCache, TileAddr, Tile & 0x3ff); // This is one of the functions in tile.cpp
 			}
 		}
 
@@ -150,8 +155,10 @@ namespace TileImpl {
 			Updates the colorPalette, selecting the option defined in the Tile.
 
 			* It seems like Tile also contains a reference to the index of the color palette to be used.
-			* According to DirectColourMaps, we may have up to 8 color palettes at the same time.
-			* PaletteShift is initialized in S9xSelectTileConverter (tile.cpp:463). It depends on the depth value and may be 0, 10-4, or 10-2.
+			* According to DirectColourMaps, we may have up to 8 color palettes at the same time. these seem to be fixed colors, though.
+			* PaletteShift: initialized in S9xSelectTileConverter (tile.cpp:463). It depends on the depth value and may be 0, 10-4, or 10-2.
+			* PaletteMask: Depends on the background depth value. This may be 0 (depth=8) or a 3 bits mask (=7) shifted left by 4 or 2 (depth=4 or 2).
+			* StartPalette: Depending on BGMode, the background color palette will map the entire 256 values or just a subset, like 16. This is the initial index in the color palette.
 		*/
 		alwaysinline void SelectPalette() const
 		{
@@ -273,16 +280,24 @@ namespace TileImpl {
 	#endif
 
 	/*
-		These functions will draw the tiles in the screen. They handle differences such as: Simple drawing, 
+		These are TILE templates. They will draw the tiles in the screen and handle differences such as: Simple drawing, 
 		Clipping, Mosaic, Backdrop, and Mode7.
 
 		* Names: TILE, DrawTile16, DrawClippedTile16, DrawMosaicPixel16, DrawBackdrop16, DrawMode7MosaicBG1, ...
 		* Draw: main function, called from template arguments
 		* Tile: The tile to be drawn. This contains the tile address and two bits indicating vertical and horizontal flips.
 		* Offset: This is the x,y coordinate to draw the tile in the screen, decomposed as a single offset. For every line, it will jump GFX.PPL, the screen size.
-		* StartLine: Unknown. 
+		* StartLine: Unknown. Something related to Interlace.
 		* LineCount: The number of lines in the tile to be draw. Probably called with 8, 4, or 2. The heights of the tile as imported by ConvertTile in tile.cpp.
 		* PIXEL: One of Hires or HiresInterlace
+		* They are used as an Array of functions in S9xSelectTileRenderers (tile.cpp:350) to define the following GFX callbacks:
+					GFX.DrawTileNomath
+					GFX.DrawClippedTileNomath
+					GFX.DrawMosaicPixelNomath
+					GFX.DrawBackdropNomath
+					GFX.DrawMode7BG1Nomath
+					GFX.DrawMode7BG2Nomath
+					Which are used in gfx.cpp to draw OBJ and tiles in functions like: DrawOBJ, DrawBackdrop and DrawBackground*
 
 	*/
 
@@ -309,7 +324,7 @@ namespace TileImpl {
 	{
 		typedef void (*call_t)(uint32, uint32, uint32, uint32);
 
-		enum { Pitch = PIXEL::Pitch };
+		enum { Pitch = PIXEL::Pitch }; // This is 1 or 2, depending if interlace is off or on, respectively
 		typedef typename PIXEL::bpstart_t bpstart_t; // This is BPProgressive or BPInterlace (defined at the top of this file)
 
 		static void Draw(uint32 Tile, uint32 Offset, uint32 StartLine, uint32 LineCount)
@@ -322,6 +337,9 @@ namespace TileImpl {
 			if (cache.IsBlankTile())
 				return;
 			cache.SelectPalette();
+
+			DumpTileWithPalette(cache.Ptr());
+			CountReferences();
 
 			if (!(Tile & (V_FLIP | H_FLIP)))
 			{

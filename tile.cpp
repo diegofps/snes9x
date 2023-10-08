@@ -347,6 +347,7 @@ extern template struct TileImpl::Renderers<DrawMosaicPixel16, HiresInterlace>;
 
 
 // Select the functions that will draw the tiles saved in the cached memory
+// This function is called multiple times during the emulation. Check the function RenderScreen, in gfx.cpp:310.
 void S9xSelectTileRenderers (int BGMode, bool8 sub, bool8 obj)
 {
 	void	(**DT)		(uint32, uint32, uint32, uint32);				  // DrawTile
@@ -459,7 +460,9 @@ void S9xSelectTileRenderers (int BGMode, bool8 sub, bool8 obj)
 }
 
 
-// Select the functions that will read the tiles from VRAM and save them in the cached memory
+// Select the functions that will read the tiles from VRAM and save them in the cached memory.
+// This function will be called multiple times during the emulation. For instance, for each ofthe 
+// four backgrounds depending on PPU.BGMode. Check RenderScreen in gfx.cpp:310.
 void S9xSelectTileConverter (int depth, bool8 hires, bool8 sub, bool8 mosaic)
 {
 	switch (depth)

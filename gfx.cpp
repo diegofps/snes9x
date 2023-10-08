@@ -13,6 +13,7 @@
 #include "movie.h"
 #include "screenshot.h"
 #include "display.h"
+#include "superres.h"
 
 extern struct SCheatData		Cheat;
 extern struct SLineData			LineData[240];
@@ -60,7 +61,9 @@ bool8 S9xGraphicsInit (void)
 	GFX.ZBuffer    = (uint8 *)  malloc(GFX.ScreenSize);
 	GFX.SubZBuffer = (uint8 *)  malloc(GFX.ScreenSize);
 
-	if (!GFX.ZERO || !GFX.SubScreen || !GFX.ZBuffer || !GFX.SubZBuffer)
+	XGFX.DumpedTileWithPalette = (uint8 *) malloc(64 + 2*256);
+
+	if (!GFX.ZERO || !GFX.SubScreen || !GFX.ZBuffer || !GFX.SubZBuffer || !XGFX.DumpedTileWithPalette)
 	{
 		S9xGraphicsDeinit();
 		return (FALSE);
@@ -107,6 +110,8 @@ void S9xGraphicsDeinit (void)
 	if (GFX.SubScreen)  { free(GFX.SubScreen);  GFX.SubScreen  = NULL; }
 	if (GFX.ZBuffer)    { free(GFX.ZBuffer);    GFX.ZBuffer    = NULL; }
 	if (GFX.SubZBuffer) { free(GFX.SubZBuffer); GFX.SubZBuffer = NULL; }
+
+	if (XGFX.DumpedTileWithPalette) { free(XGFX.DumpedTileWithPalette); XGFX.DumpedTileWithPalette = NULL; }
 }
 
 void S9xGraphicsScreenResize (void)
@@ -217,7 +222,13 @@ void S9xEndScreenRefresh (void)
 
 			// S9xDoRawMovie(IPPU.RenderedScreenWidth, IPPU.RenderedScreenHeight);
 
-			// if (Settings.TakeScreenshot)
+			if (IPPU.TotalEmulatedFrames % 60)
+			{
+				ShowReferenceCounters();
+				// ClearReferenceCounters();
+			}
+
+			if (Settings.TakeScreenshot)
 				S9xDoScreenshot(IPPU.RenderedScreenWidth, IPPU.RenderedScreenHeight);
 
 			if (Settings.AutoDisplayMessages)
@@ -337,6 +348,7 @@ static inline void RenderScreen (bool8 sub)
 		BG.NameSelect = PPU.OBJNameSelect;
 		BG.EnableMath = !sub && (Memory.FillRAM[0x2131] & 0x10);
 		BG.StartPalette = 128;
+		BG.PaletteSize = 1 << 4;
 		S9xSelectTileConverter(4, FALSE, sub, FALSE);
 		S9xSelectTileRenderers(PPU.BGMode, sub, TRUE);
 		DrawOBJS(D + 4);
@@ -349,6 +361,7 @@ static inline void RenderScreen (bool8 sub)
 		if (BGActive & (1 << n)) \
 		{ \
 			BG.StartPalette = pal; \
+			BG.PaletteSize = 1 << n; \
 			BG.EnableMath = !sub && (Memory.FillRAM[0x2131] & (1 << n)); \
 			BG.TileSizeH = (!hires && PPU.BG[n].BGSize) ? 16 : 8; \
 			BG.TileSizeV = (PPU.BG[n].BGSize) ? 16 : 8; \
@@ -772,7 +785,9 @@ static void DrawOBJS (int D)
 			if (tiles <= 0)
 				continue;
 
-			int	BaseTile = (((GFX.OBJLines[Y].OBJ[I].Line << 1) + (PPU.OBJ[S].Name & 0xf0)) & 0xf0) | (PPU.OBJ[S].Name & 0x100) | (PPU.OBJ[S].Palette << 10);
+			int	BaseTile = (((GFX.OBJLines[Y].OBJ[I].Line << 1) + (PPU.OBJ[S].Name & 0xf0)) & 0xf0) | 
+					(PPU.OBJ[S].Name & 0x100) | (PPU.OBJ[S].Palette << 10);
+			
 			int	TileX = PPU.OBJ[S].Name & 0x0f;
 			int	TileLine = (GFX.OBJLines[Y].OBJ[I].Line & 7) * 8;
 			int	TileInc = 1;
