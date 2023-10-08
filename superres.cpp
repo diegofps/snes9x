@@ -93,13 +93,16 @@ void xgfxCaptureTileAndPalette(uint8 * pCache, uint32 LineCount, uint32 Offset)
         ++it2->second->Frequency;
 }
 
-void xgfxDumpPaletteAsJson(PaletteDump & palette, std::ostream & o)
+void xgfxDumpPaletteAsJson(PaletteDump & palette, std::ostream & o, std::string indent)
 {
     int r,g,b;
 
-    o << "{";
+    o << indent << "{";
 
-    o << std::endl << "  \"Colors\": [";
+    o << "\"Size\": " << palette.Size;
+    o << ", \"Frequency\": " << palette.Frequency;
+
+    o << ", \"Colors\": [";
 
     DECOMPOSE_PIXEL_8_BITS(palette.Colors[0],r,g,b);
     o << "[" << r << "," << g << "," << b << "]";
@@ -107,35 +110,32 @@ void xgfxDumpPaletteAsJson(PaletteDump & palette, std::ostream & o)
     for (uint32 i=1;i!=palette.Size;++i)
     {
         DECOMPOSE_PIXEL_8_BITS(palette.Colors[i],r,g,b);
-        o << ", [" << r << "," << g << "," << b << "]";
+        o << ",[" << r << "," << g << "," << b << "]";
     }
     o << "]";
-
-    o << "," << std::endl << "  \"Size\": " << palette.Size;
-    o << "," << std::endl << "  \"Frequency\": " << palette.Frequency;
 
     o << "}";
 }
 
-void xgfxDumpTileAsJson(TileDump & tile, std::ostream & o)
+void xgfxDumpTileAsJson(TileDump & tile, std::ostream & o, std::string indent)
 {
-    o << "{";
+    o << indent << "{";
     
-    o << std::endl << "  \"Pixels\": [" << int(tile.Pixels[0]);
+    o << std::endl << indent << "  \"Pixels\": [" << int(tile.Pixels[0]);
     for (uint32 i=1;i!=tile.Lines*8;++i)
         o << "," << int(tile.Pixels[i]);
     o << "]";
 
-    o << "," << std::endl << "  \"Lines\": " << tile.Lines;
-    o << "," << std::endl << "  \"PaletteSize\": " << tile.PaletteSize;
-    o << "," << std::endl << "  \"RefScreenshot1\": { \"id\":" << tile.RefScreenshot1 << ", \"frame\":" << tile.RefFrame1 << ", \"x\":" << tile.RefX1 << ", \"y\":" << tile.RefY1 << "}";
-    o << "," << std::endl << "  \"RefScreenshot2\": { \"id\":" << tile.RefScreenshot2 << ", \"frame\":" << tile.RefFrame2 << ", \"x\":" << tile.RefX2 << ", \"y\":" << tile.RefY2 << "}";
-    o << "," << std::endl << "  \"RefScreenshot3\": { \"id\":" << tile.RefScreenshot3 << ", \"frame\":" << tile.RefFrame3 << ", \"x\":" << tile.RefX3 << ", \"y\":" << tile.RefY3 << "}";
-    o << "," << std::endl << "  \"LastSeenOnFrame\": " << tile.LastSeenOnFrame;
-    o << "," << std::endl << "  \"SeenOnFrames\": " << tile.SeenOnFrames;
-    o << "," << std::endl << "  \"PalettesSeen\": " << tile.PalettesUsed.size();
+    o << "," << std::endl << indent << "  \"Lines\": " << tile.Lines;
+    o << "," << std::endl << indent << "  \"PaletteSize\": " << tile.PaletteSize;
+    o << "," << std::endl << indent << "  \"RefScreenshot1\": { \"id\": " << tile.RefScreenshot1 << ", \"x\": " << tile.RefX1 << ", \"y\": " << tile.RefY1 << ", \"frame\": " << tile.RefFrame1 << "}";
+    o << "," << std::endl << indent << "  \"RefScreenshot2\": { \"id\": " << tile.RefScreenshot2 << ", \"x\": " << tile.RefX2 << ", \"y\": " << tile.RefY2 << ", \"frame\": " << tile.RefFrame2 << "}";
+    o << "," << std::endl << indent << "  \"RefScreenshot3\": { \"id\": " << tile.RefScreenshot3 << ", \"x\": " << tile.RefX3 << ", \"y\": " << tile.RefY3 << ", \"frame\": " << tile.RefFrame3 << "}";
+    o << "," << std::endl << indent << "  \"LastSeenOnFrame\": " << tile.LastSeenOnFrame;
+    o << "," << std::endl << indent << "  \"SeenOnFrames\": " << tile.SeenOnFrames;
+    o << "," << std::endl << indent << "  \"PalettesSeen\": " << tile.PalettesUsed.size();
 
-    o << "," << std::endl << "  \"Palettes\": [";
+    o << "," << std::endl << indent << "  \"Palettes\": " << std::endl << indent << "  [";
     bool8 first = TRUE;
     for (auto pair : tile.PalettesUsed)
     {
@@ -145,12 +145,12 @@ void xgfxDumpTileAsJson(TileDump & tile, std::ostream & o)
             o << ",";
         
         o << std::endl;
-        xgfxDumpPaletteAsJson(*pair.second, o);
+        xgfxDumpPaletteAsJson(*pair.second, o, indent + "    ");
     }
 
-    o << std::endl << "]";
+    o << std::endl << indent << "  ]";
 
-    o << std::endl << "}";
+    o << std::endl << indent << "}";
 }
 
 void xgfxDumpTilesAsJson(std::ostream & o)
@@ -166,7 +166,7 @@ void xgfxDumpTilesAsJson(std::ostream & o)
             o << ",";
         
         o << std::endl;
-        xgfxDumpTileAsJson(*pair.second, o);
+        xgfxDumpTileAsJson(*pair.second, o, "  ");
     }
 
     o << std::endl << "]";
