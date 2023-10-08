@@ -133,8 +133,9 @@ void xgfxDumpTileAsJson(TileDump & tile, std::ostream & o)
     o << "," << std::endl << "  \"RefScreenshot3\": { \"id\":" << tile.RefScreenshot3 << ", \"frame\":" << tile.RefFrame3 << ", \"x\":" << tile.RefX3 << ", \"y\":" << tile.RefY3 << "}";
     o << "," << std::endl << "  \"LastSeenOnFrame\": " << tile.LastSeenOnFrame;
     o << "," << std::endl << "  \"SeenOnFrames\": " << tile.SeenOnFrames;
+    o << "," << std::endl << "  \"PalettesSeen\": " << tile.PalettesUsed.size();
 
-    o << "," << std::endl << "  \"PalettesUsed\": [";
+    o << "," << std::endl << "  \"Palettes\": [";
     bool8 first = TRUE;
     for (auto pair : tile.PalettesUsed)
     {
