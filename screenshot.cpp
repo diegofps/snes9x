@@ -21,90 +21,29 @@ u_char * movie_frame = nullptr;
 int movie_frame_width = 0;
 int movie_frame_height = 0;
 
-std::string S9xGetHardFilenameInc(std::string e, enum s9x_getdirtype dirtype, int counter)
+std::string S9xContextualizeFilename(std::string contextName, std::string fileName)
 {
-	fs::path rom_filename(Memory.ROMFilename);
-
-	fs::path filename_base(S9xGetDirectory(dirtype));
-	filename_base /= rom_filename.filename();
-	filename_base.replace_extension(".frames");
-	fs::create_directory(filename_base);
-	filename_base /= "frame";
-
-	fs::path new_filename;
-
-	if (e[0] != '.')
-		e = "." + e;
-    
-	std::string new_extension = std::to_string(counter);
-
-	while (new_extension.length() < 6)
-		new_extension = std::string("0") + new_extension;
-	new_extension += e;
-
-	new_filename = filename_base;
-	new_filename.replace_extension(new_extension);
-
-	printf("%s\n", new_filename.c_str());
-	
-	return new_filename;
+	fs::path path(S9xGetDirectory(ROM_DIR));
+	path /= fs::path(Memory.ROMFilename).filename();
+	path.replace_extension(".context");
+	fs::create_directory(path);
+	path /= fs::path(contextName).filename();
+	fs::create_directory(path);
+	path /= fs::path(fileName).filename();
+	printf("%s\n", path.c_str());
+	return path;
 }
 
-void S9xDoRawMovie(int const width, int const height)
+inline std::string S9xFormatNumberWithLeftZeros(int n, size_t minDigits)
 {
-	if (movie_file == nullptr)
-	{
-		std::string fname = S9xGetFilenameInc(".movie", SCREENSHOT_DIR);
-		movie_file = fopen(fname.c_str(), "w");
-	}
-
-	if (movie_file == nullptr)
-	{
-		printf("Can't save frame, invalid movie_file\n");
-		return;
-	}
-
-	if (movie_frame == nullptr)
-	{
-		movie_frame = new u_char[width * height * 3];
-		movie_frame_width = width;
-		movie_frame_height = height;
-	}
-
-	if (movie_frame_height != height || movie_frame_width != width)
-	{
-		printf("Can't save movie, invalid frame size\n");
-		return;
-	}
-
-	uint16 *screen = GFX.Screen;
-	u_char * rowpix = movie_frame;
-
-	for (int y=0;y<height;y++,screen+=GFX.RealPPL)
-		for (int x = 0; x < width; x++)
-		{
-			uint32	r, g, b;
-
-			DECOMPOSE_PIXEL(screen[x], r, g, b);
-
-			*(rowpix++) = r;
-			*(rowpix++) = g;
-			*(rowpix++) = b;
-		}
-	
-	fwrite(movie_frame, sizeof(u_char), width * height * 3, movie_file);
-
-	if (movie_frame_counter++ % 60 == 0)
-	{
-		printf("Movie file flushed\n");
-		fflush(movie_file);
-	}
+	std::string text = std::to_string(n);
+	while (text.length() < minDigits)
+		text = std::string("0") + text;
+	return text;
 }
 
-bool8 S9xDoScreenshot (int width, int height)
+inline bool8 S9xBaseDoScreenshot (int width, int height, std::string fname)
 {
-	Settings.TakeScreenshot = FALSE;
-
 #ifdef HAVE_LIBPNG
 	FILE		*fp;
 	png_structp	png_ptr;
@@ -112,8 +51,8 @@ bool8 S9xDoScreenshot (int width, int height)
 	png_color_8	sig_bit;
 	int			imgwidth, imgheight;
 
-	// std::string fname = S9xGetFilenameInc(".png", SCREENSHOT_DIR);
-	std::string fname = S9xGetHardFilenameInc(".png", SCREENSHOT_DIR, movie_frame_counter++);
+	// std::string fname = S9xGetFilenameInc(".png", SCREENSHOT_DIR);  enum s9x_getdirtype dirtype
+	// std::string fname = S9xGetHardFilenameInc(".png", dir, counter);
 
 	fp = fopen(fname.c_str(), "wb");
 	if (!fp)
@@ -227,4 +166,26 @@ bool8 S9xDoScreenshot (int width, int height)
 	fprintf(stderr, "Screenshot support not available (libpng was not found at build time).\n");
 	return (FALSE);
 #endif
+}
+
+bool8 S9xDoScreenshot (int width, int height)
+{
+	Settings.TakeScreenshot = FALSE;
+	std::string fname = S9xGetFilenameInc(".png", SCREENSHOT_DIR);
+	return S9xBaseDoScreenshot(width, height, fname);
+}
+
+bool8 S9xDoReferenceScreenshot (int width, int height)
+{
+	XGFX.TakeReferenceScreenshot = FALSE;
+	std::string const filename = S9xFormatNumberWithLeftZeros(XGFX.ReferenceScreenshotId++, 6) + ".png";
+	std::string const filepath = S9xContextualizeFilename("referenceScreenshots", filename);
+	return S9xBaseDoScreenshot(width, height, filepath);
+}
+
+bool8 S9xDoMovieScreenshot (int width, int height)
+{
+	std::string const filename = S9xFormatNumberWithLeftZeros(movie_frame_counter++, 9) + ".png";
+	std::string const filepath = S9xContextualizeFilename("movie", filename);
+	return S9xBaseDoScreenshot(width, height, filepath);
 }

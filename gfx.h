@@ -9,6 +9,7 @@
 
 #include "port.h"
 #include <vector>
+#include <unordered_map>
 
 struct SGFX // The Virtual Screen, ZBuffer, screen color palettes, etc
 {
@@ -70,10 +71,56 @@ struct SGFX // The Virtual Screen, ZBuffer, screen color palettes, etc
 	char	FrameDisplayString[256];
 };
 
-struct XGFX // The Virtual Screen, ZBuffer, screen color palettes, etc
+struct PaletteDump;
+struct TileDump;
+struct SXGFX;
+
+struct SXGFX // The High Definition Virtual Screen
 {
-	uint8   *DumpedTileWithPalette;	// This will hold the pair (tile, colorPalette)
-	uint32  DumpedTileWithPaletteSize;
+	std::unordered_map<std::string, TileDump*> DumpedTiles;
+	std::string DumpedPaletteKey;
+	std::string DumpedTileKey;
+
+	// uint8   *DumpedTileWithPalette;	    // This will hold the pair (tile, colorPalette)
+	// uint32  DumpedTileWithPaletteSize;  // This is the size of of the dumped pair, tile and palette
+	bool8   TakeReferenceScreenshot;    // Used to capture a screenshot when a new pair of tile and palette was found. Used as a reference to know where it came from.
+	uint32  ReferenceScreenshotId;      // Number of reference screenshot. This is saved in the screenshot name and the captured tile sample.
+};
+
+struct PaletteDump
+{
+	uint16  Colors[256];  // A copy of the first colorPalette used
+	uint32  Size;         // The number of colors in this color palette (up to 256)
+	uint32  Frequency;    // The number of times this color palette was used (may be used multiple times per frame)
+
+	PaletteDump(std::string & colorPalette)
+	{
+		memcpy(Colors, &colorPalette[0], colorPalette.size());
+		Size = colorPalette.size() / 2;
+		Frequency = 1;
+	}
+
+};
+
+struct TileDump // A struct to capture and dump tiles during the game execution
+{
+	std::unordered_map<std::string, PaletteDump*> PalettesUsed; // Memorizes the palette colors and frequency they were used
+
+	uint8   Pixels[64];            // The pixel colors before conversion to RGB, represented as color palette indexes.
+	uint32  Lines;                 // The number of lines it was called to draw. Probably 8, 4, or 2.
+	uint32  PaletteSize;           // The number of colors it uses in the palette. May be 1<<2, 1<<4, or 1<<8.
+	int32   RefScreenshot1;  // Number of first frame it appeared, as XGFX.ReferenceScreenshotId
+	int32   RefScreenshot2;  // Number of 10th frame it appeared, as XGFX.ReferenceScreenshotId (may be -1 if not seen for 10 frames)
+	int32   RefScreenshot3;  // Number of 100th frame it appeared, as XGFX.ReferenceScreenshotId (may be -1 if not seen for 100 frames)
+	int32   RefFrame1;     // Number of first frame it appeared, as IPPU.TotalEmulatedFrames
+	int32   RefFrame2;     // Number of 10th frame it appeared , as IPPU.TotalEmulatedFrames. May be -1 if not seen for 10 frames.
+	int32   RefFrame3;     // Number of 100th frame it appeared , as IPPU.TotalEmulatedFrames. May be -1 if not seen for 100 frames.
+	int32   RefX1, RefY1;    // Coordinate in RefScreenshot1
+	int32   RefX2, RefY2;    // Coordinate in RefScreenshot2
+	int32   RefX3, RefY3;    // Coordinate in RefScreenshot3
+	uint32  LastSeenOnFrame;       // Number from IPPU.TotalEmulatedFrames
+	uint32  SeenOnFrames;          // Number of different frames it was seen, used to capture reference screenshots;
+
 };
 
 struct SBG
@@ -131,7 +178,7 @@ extern uint8		mul_brightness[16][32];
 extern uint8		brightness_cap[64];
 extern struct SBG	BG;
 extern struct SGFX	GFX;
-extern struct XGFX	XGFX;
+extern struct SXGFX	XGFX;
 
 #define H_FLIP		0x4000
 #define V_FLIP		0x8000

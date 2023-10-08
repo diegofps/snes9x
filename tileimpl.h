@@ -254,7 +254,7 @@ namespace TileImpl {
 	>
 	struct Renderers
 	{
-		enum { Pitch = PIXEL<Blend_None>::Pitch }; // Pitch is usually 1 or 2
+		enum { Pitch = PIXEL<Blend_None>::Pitch }; // Pitch is usually 1 (progressive) or 2 (interlace)
 		typedef typename TILE< PIXEL<Blend_None> >::call_t call_t; // The number and type of parameters of call_t is dynamic (mad)
 
 		static call_t Functions[9];
@@ -338,8 +338,8 @@ namespace TileImpl {
 				return;
 			cache.SelectPalette();
 
-			DumpTileWithPalette(cache.Ptr());
-			CountReferences();
+			xgfxCaptureTileAndPalette(cache.Ptr(), 8, Offset);
+			// CountReferences();
 
 			if (!(Tile & (V_FLIP | H_FLIP)))
 			{

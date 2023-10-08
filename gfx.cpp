@@ -15,6 +15,8 @@
 #include "display.h"
 #include "superres.h"
 
+#include <iostream>
+
 extern struct SCheatData		Cheat;
 extern struct SLineData			LineData[240];
 extern struct SLineMatrixData	LineMatrixData[240];
@@ -61,9 +63,9 @@ bool8 S9xGraphicsInit (void)
 	GFX.ZBuffer    = (uint8 *)  malloc(GFX.ScreenSize);
 	GFX.SubZBuffer = (uint8 *)  malloc(GFX.ScreenSize);
 
-	XGFX.DumpedTileWithPalette = (uint8 *) malloc(64 + 2*256);
+	// XGFX.DumpedTileWithPalette = (uint8 *) malloc(64 + 2*256);
 
-	if (!GFX.ZERO || !GFX.SubScreen || !GFX.ZBuffer || !GFX.SubZBuffer || !XGFX.DumpedTileWithPalette)
+	if (!GFX.ZERO || !GFX.SubScreen || !GFX.ZBuffer || !GFX.SubZBuffer /*|| !XGFX.DumpedTileWithPalette*/)
 	{
 		S9xGraphicsDeinit();
 		return (FALSE);
@@ -101,6 +103,8 @@ bool8 S9xGraphicsInit (void)
 		}
 	}
 
+	xgfxInit();
+
 	return (TRUE);
 }
 
@@ -111,7 +115,7 @@ void S9xGraphicsDeinit (void)
 	if (GFX.ZBuffer)    { free(GFX.ZBuffer);    GFX.ZBuffer    = NULL; }
 	if (GFX.SubZBuffer) { free(GFX.SubZBuffer); GFX.SubZBuffer = NULL; }
 
-	if (XGFX.DumpedTileWithPalette) { free(XGFX.DumpedTileWithPalette); XGFX.DumpedTileWithPalette = NULL; }
+	// if (XGFX.DumpedTileWithPalette) { free(XGFX.DumpedTileWithPalette); XGFX.DumpedTileWithPalette = NULL; }
 }
 
 void S9xGraphicsScreenResize (void)
@@ -202,7 +206,7 @@ void S9xEndScreenRefresh (void)
 {
 	if (IPPU.RenderThisFrame)
 	{
-		FLUSH_REDRAW();
+		FLUSH_REDRAW(); // This is where all drawing operations occur
 
 		if (GFX.DoInterlace && S9xInterlaceField() == 0)
 		{
@@ -222,11 +226,23 @@ void S9xEndScreenRefresh (void)
 
 			// S9xDoRawMovie(IPPU.RenderedScreenWidth, IPPU.RenderedScreenHeight);
 
-			if (IPPU.TotalEmulatedFrames % 60)
+			if (IPPU.TotalEmulatedFrames % 60 == 0)
+				xgfxShowReferenceCounters();
+
+			if (IPPU.TotalEmulatedFrames % 300 == 0)
 			{
-				ShowReferenceCounters();
-				// ClearReferenceCounters();
+				std::string filepath = S9xContextualizeFilename("dump", "info.json");
+				std::cout << "Dumping tiles to " << filepath << std::endl;
+				std::ofstream o(filepath.c_str(), std::ofstream::out);
+
+				if (!o.good())
+					std::cout << "WARN: Could not write dumped tiles";
+				else
+					xgfxDumpTilesAsJson(o);
 			}
+			
+			if (XGFX.TakeReferenceScreenshot)
+				S9xDoReferenceScreenshot(IPPU.RenderedScreenWidth, IPPU.RenderedScreenHeight);
 
 			if (Settings.TakeScreenshot)
 				S9xDoScreenshot(IPPU.RenderedScreenWidth, IPPU.RenderedScreenHeight);

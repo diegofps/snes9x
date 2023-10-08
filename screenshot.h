@@ -7,7 +7,9 @@
 #ifndef _SCREENSHOT_H_
 #define _SCREENSHOT_H_
 
-void S9xDoRawMovie(int const width, int const height);
-bool8 S9xDoScreenshot (int, int);
+std::string S9xContextualizeFilename(std::string contextName, std::string fileName);
+bool8 S9xDoScreenshot (int width, int height);
+bool8 S9xDoReferenceScreenshot (int width, int height);
+bool8 S9xDoMovieScreenshot (int width, int height);
 
 #endif

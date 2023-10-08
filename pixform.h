@@ -127,6 +127,14 @@
 #define THIRD_COLOR_MASK   THIRD_COLOR_MASK_D(PIXEL_FORMAT)
 #define ALPHA_BITS_MASK    ALPHA_BITS_MASK_D(PIXEL_FORMAT)
 
+#define DECOMPOSE_PIXEL_8_BITS(PIX, R, G, B) \
+    {                                        \
+        DECOMPOSE_PIXEL(PIX, R, G, B)        \
+        (R) = int(R) * 255 / MAX_RED;        \
+        (G) = int(G) * 255 / MAX_GREEN;      \
+        (B) = int(B) * 255 / MAX_BLUE;       \
+    }
+
 
 #define GREEN_HI_BIT               ((MAX_GREEN + 1) >> 1) // Why? What for?
 #define RGB_LOW_BITS_MASK          (RED_LOW_BIT_MASK | GREEN_LOW_BIT_MASK | BLUE_LOW_BIT_MASK)     // RBG mask with the least significative bits
