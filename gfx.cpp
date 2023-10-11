@@ -231,14 +231,17 @@ void S9xEndScreenRefresh (void)
 
 			if (IPPU.TotalEmulatedFrames % 300 == 0)
 			{
-				std::string filepath = S9xContextualizeFilename("dump", "info.json");
-				std::cout << "Dumping tiles to " << filepath << std::endl;
-				std::ofstream o(filepath.c_str(), std::ofstream::out);
+				std::string filepathTiles = S9xContextualizeFilename("dump", "tiles.json");
+				std::cout << "Dumping tiles to " << filepathTiles << std::endl;
+				std::ofstream outTiles(filepathTiles.c_str(), std::ofstream::out);
+				if (!outTiles.good()) std::cout << "WARN: Could not dump tiles";
+				else xgfxDumpTilesAsJson(outTiles);
 
-				if (!o.good())
-					std::cout << "WARN: Could not write dumped tiles";
-				else
-					xgfxDumpTilesAsJson(o);
+				std::string filepathPalettes = S9xContextualizeFilename("dump", "palettes.json");
+				std::cout << "Dumping palettes to " << filepathPalettes << std::endl;
+				std::ofstream outPalettes(filepathPalettes.c_str(), std::ofstream::out);
+				if (!outPalettes.good()) std::cout << "WARN: Could not dump palettes";
+				else xgfxDumpPalettesAsJson(outPalettes);
 			}
 			
 			if (XGFX.TakeReferenceScreenshot)

@@ -15,7 +15,6 @@
 
 extern struct SLineMatrixData	LineMatrixData[240];
 
-
 namespace TileImpl {
 
 	/* 
@@ -32,6 +31,7 @@ namespace TileImpl {
 	struct BPProgressive
 	{
 		enum { Pitch = 1 };
+		enum { NAME_BPSTART = NAME_BPSTART_Progressive };
 		static alwaysinline uint32 Get(uint32 StartLine) { return StartLine; }
 	};
 
@@ -40,6 +40,7 @@ namespace TileImpl {
 	struct BPInterlace
 	{
 		enum { Pitch = 2 };
+		enum { NAME_BPSTART = NAME_BPSTART_Interlace };
 		static alwaysinline uint32 Get(uint32 StartLine) { return StartLine * 2 + BG.InterlaceLine; }
 	};
 
@@ -61,13 +62,19 @@ namespace TileImpl {
 	struct Normal1x1Base
 	{
 		enum { Pitch = BPSTART::Pitch };
+		enum { NAME_BPSTART = BPSTART::NAME_BPSTART };
+		enum { NAME_MATH = MATH::NAME_MATH };
+		enum { NAME_OP = MATH::NAME_OP };
 		typedef BPSTART bpstart_t;
 
 		static void Draw(int N, int M, uint32 Offset, uint32 OffsetInLine, uint8 Pix, uint8 Z1, uint8 Z2);
 	};
 
 	template<class MATH>
-	struct Normal1x1 : public Normal1x1Base<MATH, BPProgressive> {};
+	struct Normal1x1 : public Normal1x1Base<MATH, BPProgressive> 
+	{
+		enum { NAME_PIXEL = NAME_PIXEL_Normal1x1 };
+	};
 
 
 	// The 2x1 pixel plotter, for normal rendering when we've used hires/interlace already this frame.
@@ -75,16 +82,25 @@ namespace TileImpl {
 	struct Normal2x1Base
 	{
 		enum { Pitch = BPSTART::Pitch };
+		enum { NAME_BPSTART = BPSTART::NAME_BPSTART };
+		enum { NAME_MATH = MATH::NAME_MATH };
+		enum { NAME_OP = MATH::NAME_OP };
 		typedef BPSTART bpstart_t;
 
 		static void Draw(int N, int M, uint32 Offset, uint32 OffsetInLine, uint8 Pix, uint8 Z1, uint8 Z2);
 	};
 
 	template<class MATH>
-	struct Normal2x1 : public Normal2x1Base<MATH, BPProgressive> {};
+	struct Normal2x1 : public Normal2x1Base<MATH, BPProgressive> 
+	{
+		enum { NAME_PIXEL = NAME_PIXEL_Normal2x1 };
+	};
 
 	template<class MATH>
-	struct Interlace : public Normal2x1Base<MATH, BPInterlace> {};
+	struct Interlace : public Normal2x1Base<MATH, BPInterlace> 
+	{
+		enum { NAME_PIXEL = NAME_PIXEL_Interlace };
+	};
 
 
 	// Hires pixel plotter, this combines the main and subscreen pixels as appropriate to render hires or pseudo-hires images.
@@ -99,16 +115,25 @@ namespace TileImpl {
 	struct HiresBase
 	{
 		enum { Pitch = BPSTART::Pitch };
+		enum { NAME_BPSTART = BPSTART::NAME_BPSTART };
+		enum { NAME_MATH = MATH::NAME_MATH };
+		enum { NAME_OP = MATH::NAME_OP };
 		typedef BPSTART bpstart_t;
 
 		static void Draw(int N, int M, uint32 Offset, uint32 OffsetInLine, uint8 Pix, uint8 Z1, uint8 Z2);
 	};
 
 	template<class MATH>
-	struct Hires : public HiresBase<MATH, BPProgressive> {};
+	struct Hires : public HiresBase<MATH, BPProgressive> 
+	{
+		enum { NAME_PIXEL = NAME_PIXEL_Hires };
+	};
 
 	template<class MATH>
-	struct HiresInterlace : public HiresBase<MATH, BPInterlace> {};
+	struct HiresInterlace : public HiresBase<MATH, BPInterlace> 
+	{
+		enum { NAME_PIXEL = NAME_PIXEL_HiresInterlace };
+	};
 
 
 	/*
@@ -198,6 +223,9 @@ namespace TileImpl {
 
 	struct NOMATH
 	{
+		enum { NAME_MATH = NAME_MATH_NOMATH };
+		enum { NAME_OP = NAME_OP_NULL };
+
 		static alwaysinline uint16 Calc(uint16 Main, uint16 Sub, uint8 SD)
 		{
 			return Main;
@@ -208,6 +236,9 @@ namespace TileImpl {
 	template<class Op>
 	struct REGMATH
 	{
+		enum { NAME_MATH = NAME_MATH_REGMATH };
+		enum { NAME_OP = Op::NAME_OP };
+
 		static alwaysinline uint16 Calc(uint16 Main, uint16 Sub, uint8 SD)
 		{
 			return Op::fn(Main, (SD & 0x20) ? Sub : GFX.FixedColour);
@@ -220,6 +251,9 @@ namespace TileImpl {
 	template<class Op>
 	struct MATHF1_2
 	{
+		enum { NAME_MATH = NAME_MATH_MATHF1_2 };
+		enum { NAME_OP = Op::NAME_OP };
+
 		static alwaysinline uint16 Calc(uint16 Main, uint16 Sub, uint8 SD)
 		{
 			return GFX.ClipColors ? Op::fn(Main, GFX.FixedColour) : Op::fn1_2(Main, GFX.FixedColour);
@@ -231,6 +265,9 @@ namespace TileImpl {
 	template<class Op>
 	struct MATHS1_2
 	{
+		enum { NAME_MATH = NAME_MATH_MATHS1_2 };
+		enum { NAME_OP = Op::NAME_OP };
+
 		static alwaysinline uint16 Calc(uint16 Main, uint16 Sub, uint8 SD)
 		{
 			return GFX.ClipColors ? REGMATH<Op>::Calc(Main, Sub, SD) : (SD & 0x20) ? Op::fn1_2(Main, Sub) : Op::fn(Main, GFX.FixedColour);
@@ -278,6 +315,66 @@ namespace TileImpl {
 		TILE< PIXEL<Blend_AddS1_2Brightness> >::Draw,
 	};
 	#endif
+
+	/*
+		These will help us map BPSTART, MATH, PIXEL, and TILE types to their names in const char *
+	*/
+
+	// template<class PIXEL> struct DrawTile16;
+	// template<class PIXEL> struct DrawClippedTile16;
+	// template<class PIXEL> struct DrawMosaicPixel16;
+	// template<class PIXEL> struct DrawBackdrop16;
+	// template<class PIXEL> struct DrawMode7MosaicBG1;
+	// template<class PIXEL> struct DrawMode7MosaicBG2;
+	
+	// template <typename P> struct TILEName;
+	// template <typename P> struct TILEName<DrawTile16<P>> { static constexpr const char * const value = "DrawTile16"; };
+	// template <typename P> struct TILEName<DrawClippedTile16<P>> { static constexpr const char * const value = "DrawClippedTile16"; };
+	// template <typename P> struct TILEName<DrawMosaicPixel16<P>> { static constexpr const char * const value = "DrawMosaicPixel16"; };
+	// template <typename P> struct TILEName<DrawBackdrop16<P>> { static constexpr const char * const value = "DrawBackdrop16"; };
+	// template <typename P> struct TILEName<DrawMode7MosaicBG1<P>> { static constexpr const char * const value = "DrawMode7MosaicBG1"; };
+	// template <typename P> struct TILEName<DrawMode7MosaicBG2<P>> { static constexpr const char * const value = "DrawMode7MosaicBG2"; };
+
+	// template <typename> struct BPSTARTName;
+	// template <> struct BPSTARTName<BPProgressive> { static constexpr const char * const value = "BPProgressive"; };
+	// template <> struct BPSTARTName<BPInterlace> { static constexpr const char * const value = "BPInterlace"; };
+
+	// template <typename M> struct PIXELName;
+	// template <typename M> struct PIXELName<Interlace<M>> { static constexpr const char * const value = "Interlace"; };
+	// template <typename M> struct PIXELName<Normal2x1<M>> { static constexpr const char * const value = "Normal2x1"; };
+	// template <typename M> struct PIXELName<Normal1x1<M>> { static constexpr const char * const value = "Normal1x1"; };
+	// template <typename M> struct PIXELName<Hires<M>> { static constexpr const char * const value = "Hires"; };
+	// template <typename M> struct PIXELName<HiresInterlace<M>> { static constexpr const char * const value = "HiresInterlace"; };
+
+	// template <typename> struct MATHName;
+	// template <> struct PIXELName<Blend_None> { static constexpr const char * const value = "Blend_None"; };
+	// template <> struct PIXELName<Blend_Add> { static constexpr const char * const value = "Blend_Add"; };
+	// template <> struct PIXELName<Blend_AddF1_2> { static constexpr const char * const value = "Blend_AddF1_2"; };
+	// template <> struct PIXELName<Blend_AddS1_2> { static constexpr const char * const value = "Blend_AddS1_2"; };
+	// template <> struct PIXELName<Blend_Sub> { static constexpr const char * const value = "Blend_Sub"; };
+	// template <> struct PIXELName<Blend_SubF1_2> { static constexpr const char * const value = "Blend_SubF1_2"; };
+	// template <> struct PIXELName<Blend_SubS1_2> { static constexpr const char * const value = "Blend_SubS1_2"; };
+	// template <> struct PIXELName<Blend_AddBrightness> { static constexpr const char * const value = "Blend_AddBrightness"; };
+	// template <> struct PIXELName<Blend_AddS1_2Brightness> { static constexpr const char * const value = "Blend_AddS1_2Brightness"; };
+	
+	// template <template<class> class TILE, class PIXEL> 
+	// struct TILEGetPIXELName< TILE<PIXEL> > 
+	// { static constexpr const char * const value = PIXELName<PIXEL>::value; };
+
+	// template <template<class> class B, typename A> 
+	// struct BGetAName<B<A>> 
+	// { static constexpr const char * const value = AName<A>::value; };
+
+	// template <typename> struct AName;
+	// template <> struct AName<AOne> { static constexpr const char * const value = "AOne"; };
+	// template <> struct AName<ATwo> { static constexpr const char * const value = "ATwo"; };
+
+	// template <typename B> struct BName;
+	// template <typename A> struct BName<BOne<A>> { static constexpr const char * const value = "BOne"; };
+	// template <typename A> struct BName<BTwo<A>> { static constexpr const char * const value = "BTwo"; };
+
+	// template <typename B> struct BGetAName;
+	// template <typename A, template<class> class B> struct BGetAName<B<A>> { static constexpr const char * const value = AName<A>::value; };
 
 	/*
 		These are TILE templates. They will draw the tiles in the screen and handle differences such as: Simple drawing, 
@@ -338,7 +435,17 @@ namespace TileImpl {
 				return;
 			cache.SelectPalette();
 
-			xgfxCaptureTileAndPalette(cache.Ptr(), 8, Offset);
+			xgfxCaptureTileAndPalette(
+				cache.Ptr(), 
+				StartLine, 
+				LineCount, 
+				Offset,
+				name2char[PIXEL::NAME_MATH],
+				name2char[PIXEL::NAME_PIXEL],
+				name2char[PIXEL::NAME_OP],
+				name2char[PIXEL::NAME_BPSTART],
+				"DrawTile16");
+			
 			// CountReferences();
 
 			if (!(Tile & (V_FLIP | H_FLIP)))

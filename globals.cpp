@@ -205,3 +205,32 @@ uint8 S9xOpLengthsM1X1[256] =
 	2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 3, 3, 3, 4, // E
 	2, 2, 2, 2, 3, 2, 2, 2, 1, 3, 1, 1, 3, 3, 3, 4  // F
 };
+
+char const * name2char[] = 
+{
+	"BPProgressive",
+	"BPInterlace",
+
+	"Interlace",
+	"Normal1x1",
+	"Normal2x1",
+	"Hires",
+	"HiresInterlace",
+
+	"NOMATH",
+	"REGMATH",
+	"MATHF1_2",
+	"MATHS1_2",
+
+	"DrawTile16",
+	"DrawClippedTile16",
+	"DrawMosaicPixel16",
+	"DrawBackdrop16",
+	"DrawMode7MosaicBG1",
+	"DrawMode7MosaicBG2",
+
+	"ADD",
+	"SUB",
+	"ADD_BRIGHTNESS",
+	"NULL",
+};

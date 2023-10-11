@@ -10,6 +10,38 @@
 #include "port.h"
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
+
+enum Name 
+{
+	NAME_BPSTART_Progressive,
+	NAME_BPSTART_Interlace,
+
+	NAME_PIXEL_Interlace,
+	NAME_PIXEL_Normal1x1,
+	NAME_PIXEL_Normal2x1,
+	NAME_PIXEL_Hires,
+	NAME_PIXEL_HiresInterlace,
+
+	NAME_MATH_NOMATH,
+	NAME_MATH_REGMATH,
+	NAME_MATH_MATHF1_2,
+	NAME_MATH_MATHS1_2,
+
+	NAME_TILE_DrawTile16,
+	NAME_TILE_DrawClippedTile16,
+	NAME_TILE_DrawMosaicPixel16,
+	NAME_TILE_DrawBackdrop16,
+	NAME_TILE_DrawMode7MosaicBG1,
+	NAME_TILE_DrawMode7MosaicBG2,
+
+	NAME_OP_ADD,
+	NAME_OP_SUB,
+	NAME_OP_ADD_BRIGHTNESS,
+	NAME_OP_NULL,
+};
+
+extern char const * name2char[];
 
 struct SGFX // The Virtual Screen, ZBuffer, screen color palettes, etc
 {
@@ -77,50 +109,59 @@ struct SXGFX;
 
 struct SXGFX // The High Definition Virtual Screen
 {
+	std::unordered_map<std::string, PaletteDump*> DumpedPalettes;
 	std::unordered_map<std::string, TileDump*> DumpedTiles;
 	std::string DumpedPaletteKey;
 	std::string DumpedTileKey;
-
-	// uint8   *DumpedTileWithPalette;	    // This will hold the pair (tile, colorPalette)
-	// uint32  DumpedTileWithPaletteSize;  // This is the size of of the dumped pair, tile and palette
 	bool8   TakeReferenceScreenshot;    // Used to capture a screenshot when a new pair of tile and palette was found. Used as a reference to know where it came from.
-	uint32  ReferenceScreenshotId;      // Number of reference screenshot. This is saved in the screenshot name and the captured tile sample.
+	
+	uint32  ReferenceScreenshotID; // Number of identify a reference screenshot. This is saved in the screenshot name and used by the TileDump.
+	uint32  PaletteID;             // Number to identify palettes, in each execution.
+	uint32  TileID;                // Number to identify the tile, in each execution.
 };
 
 struct PaletteDump
 {
-	uint16  Colors[256];  // A copy of the first colorPalette used
-	uint32  Size;         // The number of colors in this color palette (up to 256)
-	uint32  Frequency;    // The number of times this color palette was used (may be used multiple times per frame)
+	size_t ID;
+	uint16 Colors[256];  // A copy of the first colorPalette used
+	uint32 Size;         // The number of colors in this color palette (up to 256)
+	uint32 Frequency;    // The number of times this color palette was used (may be used multiple times per frame)
 
-	PaletteDump(std::string & colorPalette)
+	PaletteDump(size_t id, std::string & colorPalette)
 	{
 		memcpy(Colors, &colorPalette[0], colorPalette.size());
 		Size = colorPalette.size() / 2;
 		Frequency = 1;
+		ID = id;
 	}
 
 };
 
+struct RefScreenshot
+{
+	int32 ID;    // Number of first frame it appeared, as XGFX.ReferenceScreenshotID
+	int32 Frame; // Number of first frame it appeared, as IPPU.TotalEmulatedFrames
+	int32 X;     // X coordinate in the screenshot
+	int32 Y;     // Y coordinate in the screenshot
+	uint32 StartLine; // The StartLine received by the Draw function
+	uint32 LineCount; // The LineCount received by the Draw function
+	const char * MATH;    // Name of the MATH type used
+	const char * PIXEL;   // Name of the PIEL type used
+	const char * OP;      // Name of the OP type used
+	const char * BPSTART; // Name of the BPSTART type used
+	const char * TILE;    // Name of the TILE type used
+	uint32 ColorPaletteID; // Number of the color palette used to paint the tile
+};
+
 struct TileDump // A struct to capture and dump tiles during the game execution
 {
-	std::unordered_map<std::string, PaletteDump*> PalettesUsed; // Memorizes the palette colors and frequency they were used
+	std::unordered_map<int32, int32> PalettesUsed; // Memorizes the palette colors and frequency they were used
 
-	uint8   Pixels[64];            // The pixel colors before conversion to RGB, represented as color palette indexes.
-	uint32  Lines;                 // The number of lines it was called to draw. Probably 8, 4, or 2.
-	uint32  PaletteSize;           // The number of colors it uses in the palette. May be 1<<2, 1<<4, or 1<<8.
-	int32   RefScreenshot1;  // Number of first frame it appeared, as XGFX.ReferenceScreenshotId
-	int32   RefScreenshot2;  // Number of 10th frame it appeared, as XGFX.ReferenceScreenshotId (may be -1 if not seen for 10 frames)
-	int32   RefScreenshot3;  // Number of 100th frame it appeared, as XGFX.ReferenceScreenshotId (may be -1 if not seen for 100 frames)
-	int32   RefFrame1;     // Number of first frame it appeared, as IPPU.TotalEmulatedFrames
-	int32   RefFrame2;     // Number of 10th frame it appeared , as IPPU.TotalEmulatedFrames. May be -1 if not seen for 10 frames.
-	int32   RefFrame3;     // Number of 100th frame it appeared , as IPPU.TotalEmulatedFrames. May be -1 if not seen for 100 frames.
-	int32   RefX1, RefY1;    // Coordinate in RefScreenshot1
-	int32   RefX2, RefY2;    // Coordinate in RefScreenshot2
-	int32   RefX3, RefY3;    // Coordinate in RefScreenshot3
-	uint32  LastSeenOnFrame;       // Number from IPPU.TotalEmulatedFrames
-	uint32  SeenOnFrames;          // Number of different frames it was seen, used to capture reference screenshots;
-
+	uint8         Pixels[64];        // The pixel colors before conversion to RGB, represented as color palette indexes.
+	uint32        PaletteSize;       // The number of colors it uses in the palette. May be 1<<2, 1<<4, or 1<<8.
+	uint32        LastSeenOnFrame;   // Number from IPPU.TotalEmulatedFrames
+	uint32        SeenOnFrames;      // Number of different frames it was seen, used to capture reference screenshots;
+	RefScreenshot RefScreenshots[3]; // Reference screenshots captured to display this tile in use
 };
 
 struct SBG
@@ -193,6 +234,8 @@ extern struct SXGFX	XGFX;
 */
 struct COLOR_ADD
 {
+	enum { NAME_OP = NAME_OP_ADD };
+
 	// Used when GFX.ClipColors is true
 	static alwaysinline uint16 fn(uint16 C1, uint16 C2)
 	{
@@ -223,6 +266,8 @@ struct COLOR_ADD
 
 struct COLOR_ADD_BRIGHTNESS
 {
+	enum { NAME_OP = NAME_OP_ADD_BRIGHTNESS };
+
 	// Used when GFX.ClipColors is true
 	static alwaysinline uint16 fn(uint16 C1, uint16 C2)
 	{
@@ -245,6 +290,8 @@ struct COLOR_ADD_BRIGHTNESS
 
 struct COLOR_SUB
 {
+	enum { NAME_OP = NAME_OP_SUB };
+
 	// Used when GFX.ClipColors is true
 	static alwaysinline uint16 fn(uint16 C1, uint16 C2)
 	{
