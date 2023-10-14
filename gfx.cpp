@@ -13,7 +13,7 @@
 #include "movie.h"
 #include "screenshot.h"
 #include "display.h"
-#include "superres.h"
+#include "xgfx.h"
 
 #include <iostream>
 

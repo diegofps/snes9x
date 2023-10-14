@@ -11,7 +11,7 @@
 #include "ppu.h"
 #include "tile.h"
 
-#include "superres.h"
+#include "xgfx.h"
 
 extern struct SLineMatrixData	LineMatrixData[240];
 

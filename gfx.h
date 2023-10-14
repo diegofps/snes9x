@@ -115,9 +115,9 @@ struct SXGFX // The High Definition Virtual Screen
 	std::string DumpedTileKey;
 	bool8   TakeReferenceScreenshot;    // Used to capture a screenshot when a new pair of tile and palette was found. Used as a reference to know where it came from.
 	
-	uint32  ReferenceScreenshotID; // Number of identify a reference screenshot. This is saved in the screenshot name and used by the TileDump.
-	uint32  PaletteID;             // Number to identify palettes, in each execution.
-	uint32  TileID;                // Number to identify the tile, in each execution.
+	uint32  ScreenshotID; // Number of identify a reference screenshot. This is saved in the screenshot name and used by the TileDump.
+	uint32  PaletteID;    // Number to identify palettes, in each execution.
+	uint32  TileID;       // Number to identify the tile, in each execution.
 };
 
 struct PaletteDump
@@ -137,31 +137,31 @@ struct PaletteDump
 
 };
 
-struct RefScreenshot
+struct Reference
 {
-	int32 ID;    // Number of first frame it appeared, as XGFX.ReferenceScreenshotID
+	int32 ScreenshotID;    // Number of first frame it appeared, as XGFX.ScreenshotID
 	int32 Frame; // Number of first frame it appeared, as IPPU.TotalEmulatedFrames
 	int32 X;     // X coordinate in the screenshot
 	int32 Y;     // Y coordinate in the screenshot
 	uint32 StartLine; // The StartLine received by the Draw function
 	uint32 LineCount; // The LineCount received by the Draw function
+	uint32 ColorPaletteID; // Number of the color palette used to paint the tile
 	const char * MATH;    // Name of the MATH type used
 	const char * PIXEL;   // Name of the PIEL type used
 	const char * OP;      // Name of the OP type used
 	const char * BPSTART; // Name of the BPSTART type used
 	const char * TILE;    // Name of the TILE type used
-	uint32 ColorPaletteID; // Number of the color palette used to paint the tile
 };
 
 struct TileDump // A struct to capture and dump tiles during the game execution
 {
 	std::unordered_map<int32, int32> PalettesUsed; // Memorizes the palette colors and frequency they were used
 
-	uint8         Pixels[64];        // The pixel colors before conversion to RGB, represented as color palette indexes.
-	uint32        PaletteSize;       // The number of colors it uses in the palette. May be 1<<2, 1<<4, or 1<<8.
-	uint32        LastSeenOnFrame;   // Number from IPPU.TotalEmulatedFrames
-	uint32        SeenOnFrames;      // Number of different frames it was seen, used to capture reference screenshots;
-	RefScreenshot RefScreenshots[3]; // Reference screenshots captured to display this tile in use
+	uint8     Pixels[64];        // The pixel colors before conversion to RGB, represented as color palette indexes.
+	uint32    PaletteSize;       // The number of colors it uses in the palette. May be 1<<2, 1<<4, or 1<<8.
+	uint32    LastSeenOnFrame;   // Number from IPPU.TotalEmulatedFrames
+	uint32    SeenOnFrames;      // Number of different frames it was seen, used to capture reference screenshots;
+	Reference References[3]; // Reference screenshots captured to display this tile in use
 };
 
 struct SBG

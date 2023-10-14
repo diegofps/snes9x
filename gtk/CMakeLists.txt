@@ -340,8 +340,8 @@ list(APPEND SOURCES
     ../server.cpp
     ../loadzip.cpp
     ../fscompat.cpp
-    ../superres.h
-    ../superres.cpp
+    ../xgfx.h
+    ../xgfx.cpp
     src/gtk_netplay_dialog.cpp
     src/gtk_netplay_dialog.h
     src/gtk_netplay.cpp

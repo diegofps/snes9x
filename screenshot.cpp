@@ -178,8 +178,8 @@ bool8 S9xDoScreenshot (int width, int height)
 bool8 S9xDoReferenceScreenshot (int width, int height)
 {
 	XGFX.TakeReferenceScreenshot = FALSE;
-	std::string const filename = S9xFormatNumberWithLeftZeros(XGFX.ReferenceScreenshotID++, 6) + ".png";
-	std::string const filepath = S9xContextualizeFilename("referenceScreenshots", filename);
+	std::string const filename = S9xFormatNumberWithLeftZeros(XGFX.ScreenshotID++, 6) + ".png";
+	std::string const filepath = S9xContextualizeFilename("screenshotDump", filename);
 	return S9xBaseDoScreenshot(width, height, filepath);
 }
 
