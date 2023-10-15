@@ -25,10 +25,15 @@ std::string S9xContextualizeFilename(std::string contextName, std::string fileNa
 {
 	fs::path path(S9xGetDirectory(ROM_DIR));
 	path /= fs::path(Memory.ROMFilename).filename();
-	path.replace_extension(".context");
+	path.replace_extension(".dump");
 	fs::create_directory(path);
-	path /= fs::path(contextName).filename();
-	fs::create_directory(path);
+
+	if (!contextName.empty())
+	{
+		path /= fs::path(contextName).filename();
+		fs::create_directory(path);
+	}
+
 	path /= fs::path(fileName).filename();
 	printf("%s\n", path.c_str());
 	return path;
@@ -179,7 +184,7 @@ bool8 S9xDoReferenceScreenshot (int width, int height)
 {
 	XGFX.TakeReferenceScreenshot = FALSE;
 	std::string const filename = S9xFormatNumberWithLeftZeros(XGFX.ScreenshotID++, 6) + ".png";
-	std::string const filepath = S9xContextualizeFilename("screenshotDump", filename);
+	std::string const filepath = S9xContextualizeFilename("screenshots", filename);
 	return S9xBaseDoScreenshot(width, height, filepath);
 }
 

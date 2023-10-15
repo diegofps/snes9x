@@ -60,7 +60,7 @@ void xgfxCaptureTileAndPalette(
 
     // This will initialize a reference screenshot
 
-    auto createRefScreenshot = [&](uint32 const tileID, uint32 const colorPaletteID)
+    auto createReference = [&](uint32 const tileID, uint32 const colorPaletteID)
     {
         auto ref = new ReferenceDump();
         ref->ID = XGFX.ReferenceID++;
@@ -109,7 +109,7 @@ void xgfxCaptureTileAndPalette(
         tile->LastSeenOnFrame = IPPU.TotalEmulatedFrames;
         tile->SeenOnFrames = 1;
 
-        createRefScreenshot(tile->ID, palette->ID);
+        createReference(tile->ID, palette->ID);
         XGFX.DumpedTiles[XGFX.DumpedTileKey] = tile;
     }
     else
@@ -125,10 +125,10 @@ void xgfxCaptureTileAndPalette(
         tile->SeenOnFrames++;
 
         if (tile->SeenOnFrames == 10)
-            createRefScreenshot(tile->ID, palette->ID);
+            createReference(tile->ID, palette->ID);
 
         else if (tile->SeenOnFrames == 100)
-            createRefScreenshot(tile->ID, palette->ID);
+            createReference(tile->ID, palette->ID);
     }
 
     // Update the palettes used by this tile

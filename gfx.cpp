@@ -231,19 +231,19 @@ void S9xEndScreenRefresh (void)
 
 			if (IPPU.TotalEmulatedFrames % 300 == 0)
 			{
-				std::string filepathTiles = S9xContextualizeFilename("dump", "tiles.json");
+				std::string filepathTiles = S9xContextualizeFilename("", "tiles.json");
 				std::cout << "Dumping tiles to " << filepathTiles << std::endl;
 				std::ofstream outTiles(filepathTiles.c_str(), std::ofstream::out);
 				if (!outTiles.good()) std::cout << "WARN: Could not dump tiles";
 				else xgfxDumpTilesAsJson(outTiles);
 
-				std::string filepathPalettes = S9xContextualizeFilename("dump", "palettes.json");
+				std::string filepathPalettes = S9xContextualizeFilename("", "palettes.json");
 				std::cout << "Dumping palettes to " << filepathPalettes << std::endl;
 				std::ofstream outPalettes(filepathPalettes.c_str(), std::ofstream::out);
 				if (!outPalettes.good()) std::cout << "WARN: Could not dump palettes";
 				else xgfxDumpPalettesAsJson(outPalettes);
 
-				std::string filepathReferences = S9xContextualizeFilename("dump", "references.json");
+				std::string filepathReferences = S9xContextualizeFilename("", "references.json");
 				std::cout << "Dumping references to " << filepathReferences << std::endl;
 				std::ofstream outReferences(filepathReferences.c_str(), std::ofstream::out);
 				if (!outReferences.good()) std::cout << "WARN: Could not dump references";
