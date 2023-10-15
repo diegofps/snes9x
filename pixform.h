@@ -131,7 +131,7 @@
     {                                        \
         DECOMPOSE_PIXEL(PIX, R, G, B)        \
         (R) = int(R) * 255 / MAX_RED;        \
-        (G) = int(G) * 255 / MAX_GREEN;      \
+        (G) = int(G) * 255 / 31; /* TODO: FIX MAX_GREEN returning too high */     \
         (B) = int(B) * 255 / MAX_BLUE;       \
     }
 

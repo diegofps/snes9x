@@ -14,7 +14,9 @@ void xgfxInit()
     std::cout << "Initializing xgfx" << std::endl;
     
     XGFX.TakeReferenceScreenshot = FALSE;
+
     XGFX.ScreenshotID = 1;
+    XGFX.ReferenceID = 1;
     XGFX.PaletteID = 1;
     XGFX.TileID = 1;
 
@@ -24,6 +26,10 @@ void xgfxInit()
     for (auto pair : XGFX.DumpedTiles)
         delete pair.second;
 
+    for (auto ref : XGFX.DumpedReferences)
+        delete ref;
+
+    XGFX.DumpedReferences.clear();
     XGFX.DumpedPalettes.clear();
     XGFX.DumpedTiles.clear();
 
@@ -54,20 +60,24 @@ void xgfxCaptureTileAndPalette(
 
     // This will initialize a reference screenshot
 
-    auto initRefScreenshot = [&](Reference & ref, uint32 const colorPaletteID)
+    auto createRefScreenshot = [&](uint32 const tileID, uint32 const colorPaletteID)
     {
-        ref.ScreenshotID = XGFX.ScreenshotID;
-        ref.Frame = IPPU.TotalEmulatedFrames;
-        ref.X = Offset%GFX.RealPPL;
-        ref.Y = Offset/GFX.RealPPL;
-        ref.StartLine = StartLine;
-        ref.LineCount = LineCount;
-        ref.ColorPaletteID = colorPaletteID;
-        ref.MATH = MATH;
-        ref.PIXEL = PIXEL;
-        ref.OP = OP;
-        ref.BPSTART = BPSTART;
-        ref.TILE = TILE;
+        auto ref = new ReferenceDump();
+        ref->ID = XGFX.ReferenceID++;
+        ref->TileID = tileID;
+        ref->ScreenshotID = XGFX.ScreenshotID;
+        ref->Frame = IPPU.TotalEmulatedFrames;
+        ref->X = Offset%GFX.RealPPL;
+        ref->Y = Offset/GFX.RealPPL-StartLine;
+        ref->StartLine = StartLine;
+        ref->LineCount = LineCount;
+        ref->ColorPaletteID = colorPaletteID;
+        ref->MATH = MATH;
+        ref->PIXEL = PIXEL;
+        ref->OP = OP;
+        ref->BPSTART = BPSTART;
+        ref->TILE = TILE;
+        XGFX.DumpedReferences.push_back(ref);
         XGFX.TakeReferenceScreenshot = TRUE;
     };
 
@@ -93,15 +103,13 @@ void xgfxCaptureTileAndPalette(
     if (it == XGFX.DumpedTiles.end())
     {
         tile = new TileDump();
+        tile->ID = XGFX.TileID++;
         memcpy(tile->Pixels, &XGFX.DumpedTileKey[0], XGFX.DumpedTileKey.size());
         tile->PaletteSize = BG.PaletteSize;
         tile->LastSeenOnFrame = IPPU.TotalEmulatedFrames;
         tile->SeenOnFrames = 1;
 
-        for (int i=1;i!=3;++i)
-            tile->References[i].ScreenshotID = 0;
-        
-        initRefScreenshot(tile->References[0], palette->ID);
+        createRefScreenshot(tile->ID, palette->ID);
         XGFX.DumpedTiles[XGFX.DumpedTileKey] = tile;
     }
     else
@@ -117,10 +125,10 @@ void xgfxCaptureTileAndPalette(
         tile->SeenOnFrames++;
 
         if (tile->SeenOnFrames == 10)
-            initRefScreenshot(tile->References[1], palette->ID);
+            createRefScreenshot(tile->ID, palette->ID);
 
         else if (tile->SeenOnFrames == 100)
-            initRefScreenshot(tile->References[2], palette->ID);
+            createRefScreenshot(tile->ID, palette->ID);
     }
 
     // Update the palettes used by this tile
@@ -150,7 +158,7 @@ void xgfxDumpPaletteAsJson(PaletteDump & palette, std::ostream & o, std::string 
 
     for (uint32 i=1;i!=palette.Size;++i)
     {
-        DECOMPOSE_PIXEL_8_BITS(palette.Colors[i],r,g,b);
+        DECOMPOSE_PIXEL_8_BITS(palette.Colors[i],b,g,r);
         o << ",[" << r << "," << g << "," << b << "]";
     }
     o << "]";
@@ -158,10 +166,12 @@ void xgfxDumpPaletteAsJson(PaletteDump & palette, std::ostream & o, std::string 
     o << "}";
 }
 
-void xgfxDumpRefScreenshotAsJson(Reference & ref, std::ostream & o, std::string indent)
+void xgfxDumpReferenceAsJson(ReferenceDump & ref, std::ostream & o, std::string indent)
 {
     o << indent << "{";
-    o << "\"ScreenshotID\": " << ref.ScreenshotID;
+    o << "\"ID\": " << ref.ID;
+    o << "," << " \"TileID\": " << ref.TileID;
+    o << "," << " \"ScreenshotID\": " << ref.ScreenshotID;
     o << "," << " \"Frame\": " << ref.Frame;
     o << "," << " \"X\": " << ref.X;
     o << "," << " \"Y\": " << ref.Y;
@@ -179,8 +189,10 @@ void xgfxDumpRefScreenshotAsJson(Reference & ref, std::ostream & o, std::string 
 void xgfxDumpTileAsJson(TileDump & tile, std::ostream & o, std::string indent)
 {
     o << indent << "{";
-    
-    o << std::endl << indent << "  \"Pixels\": [" << int(tile.Pixels[0]);
+
+    o << std::endl << indent << "  \"ID\": " << tile.ID;
+
+    o << "," << std::endl << indent << "  \"Pixels\": [" << int(tile.Pixels[0]);
     for (uint32 i=1;i!=64;++i)
         o << "," << int(tile.Pixels[i]);
     o << "]";
@@ -199,23 +211,6 @@ void xgfxDumpTileAsJson(TileDump & tile, std::ostream & o, std::string indent)
     o << "," << std::endl << indent << "  \"LastSeenOnFrame\": " << tile.LastSeenOnFrame;
     o << "," << std::endl << indent << "  \"SeenOnFrames\": " << tile.SeenOnFrames;
     o << "," << std::endl << indent << "  \"PalettesSeen\": " << tile.PalettesUsed.size();
-
-    o << "," << std::endl << indent << "  \"References\": [";
-    first = TRUE;
-    for (Reference & ref : tile.References)
-    {
-        if (ref.ScreenshotID == 0)
-            break;
-        
-        if (first)
-            first = FALSE;
-        else 
-            o << ",";
-        
-        o << std::endl;
-        xgfxDumpRefScreenshotAsJson(ref, o, indent + "    ");
-    }
-    o << std::endl << indent << "  ]";
 
     o << std::endl << indent << "}";
 }
@@ -258,6 +253,25 @@ void xgfxDumpPalettesAsJson(std::ostream & o)
     o << std::endl << "]";
 }
 
+void xgfxDumpReferencesAsJson(std::ostream & o)
+{
+    o << "[";
+    bool8 first = TRUE;
+
+    for (auto ref : XGFX.DumpedReferences)
+    {
+        if (first)
+            first = FALSE;
+        else
+            o << ",";
+        
+        o << std::endl;
+        xgfxDumpReferenceAsJson(*ref, o, "  ");
+    }
+
+    o << std::endl << "]";
+}
+
 /*
     Super Metroid, quick counter (all demos in the beginning plus a small walk)
     Unique tiles: 6107
@@ -267,6 +281,7 @@ void xgfxShowReferenceCounters()
 {
     std::cout << "Unique tiles: " << XGFX.DumpedTiles.size() << std::endl;
     std::cout << "Unique palettes: " << XGFX.DumpedPalettes.size() << std::endl;
+    std::cout << "References: " << XGFX.DumpedReferences.size() << std::endl;
 
     // std::cout << std::endl;
     // std::cout << "Unique tiles: " << palettesPerTile.size() << std::endl;

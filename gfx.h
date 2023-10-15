@@ -103,6 +103,7 @@ struct SGFX // The Virtual Screen, ZBuffer, screen color palettes, etc
 	char	FrameDisplayString[256];
 };
 
+struct ReferenceDump;
 struct PaletteDump;
 struct TileDump;
 struct SXGFX;
@@ -111,18 +112,21 @@ struct SXGFX // The High Definition Virtual Screen
 {
 	std::unordered_map<std::string, PaletteDump*> DumpedPalettes;
 	std::unordered_map<std::string, TileDump*> DumpedTiles;
+	std::vector<ReferenceDump*> DumpedReferences;
+
+	bool8       TakeReferenceScreenshot; // Used to capture a screenshot when a new pair of tile and palette was found. Used as a reference to know where it came from.
 	std::string DumpedPaletteKey;
 	std::string DumpedTileKey;
-	bool8   TakeReferenceScreenshot;    // Used to capture a screenshot when a new pair of tile and palette was found. Used as a reference to know where it came from.
 	
 	uint32  ScreenshotID; // Number of identify a reference screenshot. This is saved in the screenshot name and used by the TileDump.
 	uint32  PaletteID;    // Number to identify palettes, in each execution.
 	uint32  TileID;       // Number to identify the tile, in each execution.
+	uint32  ReferenceID;  // Number to identify the reference, in each execution.
 };
 
 struct PaletteDump
 {
-	size_t ID;
+	size_t ID;           // A unique identifier for this palette
 	uint16 Colors[256];  // A copy of the first colorPalette used
 	uint32 Size;         // The number of colors in this color palette (up to 256)
 	uint32 Frequency;    // The number of times this color palette was used (may be used multiple times per frame)
@@ -137,9 +141,11 @@ struct PaletteDump
 
 };
 
-struct Reference
+struct ReferenceDump
 {
-	int32 ScreenshotID;    // Number of first frame it appeared, as XGFX.ScreenshotID
+	int32 ID;            // A unique identifier for this Reference
+	int32 TileID;        // Id of the tile that this reference represents.     
+	int32 ScreenshotID;  // Id of screenshot with the first frame it appeared, as XGFX.ScreenshotID
 	int32 Frame; // Number of first frame it appeared, as IPPU.TotalEmulatedFrames
 	int32 X;     // X coordinate in the screenshot
 	int32 Y;     // Y coordinate in the screenshot
@@ -157,11 +163,12 @@ struct TileDump // A struct to capture and dump tiles during the game execution
 {
 	std::unordered_map<int32, int32> PalettesUsed; // Memorizes the palette colors and frequency they were used
 
+	uint32    ID;                // A unique identifier for this tile
 	uint8     Pixels[64];        // The pixel colors before conversion to RGB, represented as color palette indexes.
 	uint32    PaletteSize;       // The number of colors it uses in the palette. May be 1<<2, 1<<4, or 1<<8.
 	uint32    LastSeenOnFrame;   // Number from IPPU.TotalEmulatedFrames
 	uint32    SeenOnFrames;      // Number of different frames it was seen, used to capture reference screenshots;
-	Reference References[3]; // Reference screenshots captured to display this tile in use
+	// Reference References[3]; // Reference screenshots captured to display this tile in use
 };
 
 struct SBG

@@ -19,6 +19,7 @@ void xgfxCaptureTileAndPalette(
 
 void xgfxDumpTilesAsJson(std::ostream & o);
 void xgfxDumpPalettesAsJson(std::ostream & o);
+void xgfxDumpReferencesAsJson(std::ostream & o);
 void xgfxShowReferenceCounters();
 
 #endif /* _SUPERRES_H_ */

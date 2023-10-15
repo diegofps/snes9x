@@ -242,6 +242,12 @@ void S9xEndScreenRefresh (void)
 				std::ofstream outPalettes(filepathPalettes.c_str(), std::ofstream::out);
 				if (!outPalettes.good()) std::cout << "WARN: Could not dump palettes";
 				else xgfxDumpPalettesAsJson(outPalettes);
+
+				std::string filepathReferences = S9xContextualizeFilename("dump", "references.json");
+				std::cout << "Dumping references to " << filepathReferences << std::endl;
+				std::ofstream outReferences(filepathReferences.c_str(), std::ofstream::out);
+				if (!outReferences.good()) std::cout << "WARN: Could not dump references";
+				else xgfxDumpReferencesAsJson(outReferences);
 			}
 			
 			if (XGFX.TakeReferenceScreenshot)
