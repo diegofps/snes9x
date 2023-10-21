@@ -14,7 +14,7 @@ void xgfxInit()
     std::cout << "Initializing xgfx" << std::endl;
     
     XGFX.TakeReferenceScreenshot = FALSE;
-
+    XGFX.DrawingOBJS = FALSE;
     XGFX.ScreenshotID = 1;
     XGFX.ReferenceID = 1;
     XGFX.PaletteID = 1;
@@ -37,6 +37,7 @@ void xgfxInit()
 }
 
 void xgfxCaptureTileAndPalette(
+    uint32 Tile,
     uint8 * pCache, 
     uint32 StartLine, 
     uint32 LineCount, 
@@ -103,11 +104,16 @@ void xgfxCaptureTileAndPalette(
     if (it == XGFX.DumpedTiles.end())
     {
         tile = new TileDump();
+        tile->Tile = Tile;
         tile->ID = XGFX.TileID++;
         memcpy(tile->Pixels, &XGFX.DumpedTileKey[0], XGFX.DumpedTileKey.size());
         tile->PaletteSize = BG.PaletteSize;
         tile->LastSeenOnFrame = IPPU.TotalEmulatedFrames;
         tile->SeenOnFrames = 1;
+        tile->UsedInBackground = FALSE;
+        tile->UsedInSprite = FALSE;
+        tile->UsedWithHFlip = FALSE;
+        tile->UsedWithVFlip = FALSE;
 
         createReference(tile->ID, palette->ID);
         XGFX.DumpedTiles[XGFX.DumpedTileKey] = tile;
@@ -116,6 +122,19 @@ void xgfxCaptureTileAndPalette(
     {
         tile = it->second;
     }
+
+    // Update the flags that indicate if this tile was drawed for a sprite or a background, HFlip, or VFlip.
+
+    if (XGFX.DrawingOBJS==TRUE)
+        tile->UsedInSprite = TRUE;
+    else
+        tile->UsedInBackground = TRUE;
+
+    if (Tile & H_FLIP)
+        tile->UsedWithHFlip = TRUE;
+
+    if (Tile & V_FLIP)
+        tile->UsedWithVFlip = TRUE;
 
     // Check if it is time to capture more reference screenshots
 
@@ -191,6 +210,7 @@ void xgfxDumpTileAsJson(TileDump & tile, std::ostream & o, std::string indent)
     o << indent << "{";
 
     o << std::endl << indent << "  \"ID\": " << tile.ID;
+    o << "," << std::endl << indent << "  \"Tile\": " << tile.Tile;
 
     o << "," << std::endl << indent << "  \"Pixels\": [" << int(tile.Pixels[0]);
     for (uint32 i=1;i!=64;++i)
@@ -211,6 +231,10 @@ void xgfxDumpTileAsJson(TileDump & tile, std::ostream & o, std::string indent)
     o << "," << std::endl << indent << "  \"LastSeenOnFrame\": " << tile.LastSeenOnFrame;
     o << "," << std::endl << indent << "  \"SeenOnFrames\": " << tile.SeenOnFrames;
     o << "," << std::endl << indent << "  \"PalettesSeen\": " << tile.PalettesUsed.size();
+    o << "," << std::endl << indent << "  \"UsedInBackground\": " << (tile.UsedInBackground==TRUE?"true":"false");
+    o << "," << std::endl << indent << "  \"UsedInSprite\": " << (tile.UsedInSprite==TRUE?"true":"false");
+    o << "," << std::endl << indent << "  \"UsedWithHFlip\": " << (tile.UsedWithHFlip==TRUE?"true":"false");
+    o << "," << std::endl << indent << "  \"UsedWithVFlip\": " << (tile.UsedWithVFlip==TRUE?"true":"false");
 
     o << std::endl << indent << "}";
 }

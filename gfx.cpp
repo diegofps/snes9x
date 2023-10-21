@@ -785,12 +785,20 @@ static void SetupOBJ (void)
 	IPPU.OBJChanged = FALSE;
 }
 
+class RaiseDrawingFlag {
+public:
+	RaiseDrawingFlag() { XGFX.DrawingOBJS = TRUE; }
+	~RaiseDrawingFlag() { XGFX.DrawingOBJS = FALSE; }
+};
+
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC push_options
 #pragma GCC optimize ("no-tree-vrp")
 #endif
 static void DrawOBJS (int D)
 {
+	RaiseDrawingFlag dFlag;
+	
 	void (*DrawTile) (uint32, uint32, uint32, uint32) = NULL;
 	void (*DrawClippedTile) (uint32, uint32, uint32, uint32, uint32, uint32) = NULL;
 

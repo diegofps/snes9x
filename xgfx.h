@@ -7,6 +7,7 @@
 
 void xgfxInit();
 void xgfxCaptureTileAndPalette(
+    uint32 Tile,
     uint8 * pCache, 
     uint32 StartLine, 
     uint32 LineCount, 

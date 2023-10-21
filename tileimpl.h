@@ -436,6 +436,7 @@ namespace TileImpl {
 			cache.SelectPalette();
 
 			xgfxCaptureTileAndPalette(
+				Tile,
 				cache.Ptr(), 
 				StartLine, 
 				LineCount, 
@@ -532,6 +533,18 @@ namespace TileImpl {
 				return;
 			cache.SelectPalette();
 
+			xgfxCaptureTileAndPalette(
+				Tile,
+				cache.Ptr(), 
+				StartLine, 
+				LineCount, 
+				Offset,
+				name2char[PIXEL::NAME_MATH],
+				name2char[PIXEL::NAME_PIXEL],
+				name2char[PIXEL::NAME_OP],
+				name2char[PIXEL::NAME_BPSTART],
+				"DrawClippedTile16");
+			
 			if (!(Tile & (V_FLIP | H_FLIP)))
 			{
 				bp = cache.Ptr() + bpstart_t::Get(StartLine);
@@ -644,6 +657,18 @@ namespace TileImpl {
 				return;
 			cache.SelectPalette();
 
+			xgfxCaptureTileAndPalette(
+				Tile,
+				cache.Ptr(), 
+				StartLine, 
+				LineCount, 
+				Offset,
+				name2char[PIXEL::NAME_MATH],
+				name2char[PIXEL::NAME_PIXEL],
+				name2char[PIXEL::NAME_OP],
+				name2char[PIXEL::NAME_BPSTART],
+				"DrawMosaicPixel16");
+			
 			if (Tile & H_FLIP)
 				StartPixel = 7 - StartPixel;
 
