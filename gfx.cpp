@@ -386,7 +386,7 @@ static inline void RenderScreen (bool8 sub)
 		if (BGActive & (1 << n)) \
 		{ \
 			BG.StartPalette = pal; \
-			BG.PaletteSize = 1 << n; \
+			BG.PaletteSize = 1 << depth; \
 			BG.EnableMath = !sub && (Memory.FillRAM[0x2131] & (1 << n)); \
 			BG.TileSizeH = (!hires && PPU.BG[n].BGSize) ? 16 : 8; \
 			BG.TileSizeV = (PPU.BG[n].BGSize) ? 16 : 8; \

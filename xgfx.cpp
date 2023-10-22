@@ -155,9 +155,8 @@ void xgfxCaptureTileAndPalette(
     ++tile->PalettesUsed[palette->ID];
 
     // This should never happen, but let's check if it ever happens
-    // This is common and happens a lot
-    // if (BG.PaletteSize != tile->PaletteSize)
-    //     std::cout << "INFO: Found a tile that uses color palettes with different sizes" << std::endl;
+    if (BG.PaletteSize != tile->PaletteSize)
+        std::cout << "INFO: Found a tile that uses color palettes with different sizes" << std::endl;
 }
 
 void xgfxDumpPaletteAsJson(PaletteDump & palette, std::ostream & o, std::string indent)
