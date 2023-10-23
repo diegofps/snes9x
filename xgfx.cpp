@@ -61,11 +61,11 @@ void xgfxCaptureTileAndPalette(
 
     // This will initialize a reference screenshot
 
-    auto createReference = [&](uint32 const tileID, uint32 const colorPaletteID)
+    auto createReference = [&](uint32 const colorPaletteID)
     {
         auto ref = new ReferenceDump();
         ref->ID = XGFX.ReferenceID++;
-        ref->TileID = tileID;
+        ref->Tile = Tile;
         ref->ScreenshotID = XGFX.ScreenshotID;
         ref->Frame = IPPU.TotalEmulatedFrames;
         ref->X = Offset%GFX.RealPPL;
@@ -80,6 +80,7 @@ void xgfxCaptureTileAndPalette(
         ref->TILE = TILE;
         XGFX.DumpedReferences.push_back(ref);
         XGFX.TakeReferenceScreenshot = TRUE;
+        return ref->ID;
     };
 
     // Find or create the color palette
@@ -104,7 +105,6 @@ void xgfxCaptureTileAndPalette(
     if (it == XGFX.DumpedTiles.end())
     {
         tile = new TileDump();
-        tile->Tile = Tile;
         tile->ID = XGFX.TileID++;
         memcpy(tile->Pixels, &XGFX.DumpedTileKey[0], XGFX.DumpedTileKey.size());
         tile->PaletteSize = BG.PaletteSize;
@@ -112,10 +112,16 @@ void xgfxCaptureTileAndPalette(
         tile->SeenOnFrames = 1;
         tile->UsedInBackground = FALSE;
         tile->UsedInSprite = FALSE;
-        tile->UsedWithHFlip = FALSE;
-        tile->UsedWithVFlip = FALSE;
 
-        createReference(tile->ID, palette->ID);
+        tile->Ref1ID = createReference(palette->ID);
+        tile->Ref10ID = 0;
+        tile->Ref100ID = 0;
+        tile->Ref1000ID = 0;
+        tile->RefNNID = 0;
+        tile->RefNFID = 0;
+        tile->RefFNID = 0;
+        tile->RefFFID = 0;
+
         XGFX.DumpedTiles[XGFX.DumpedTileKey] = tile;
     }
     else
@@ -130,12 +136,30 @@ void xgfxCaptureTileAndPalette(
     else
         tile->UsedInBackground = TRUE;
 
-    if (Tile & H_FLIP)
-        tile->UsedWithHFlip = TRUE;
+    if (Tile & H_FLIP && Tile & V_FLIP)
+    {
+        if (tile->RefFFID == 0)
+            tile->RefFFID = createReference(palette->ID);
+    }
+    
+    else if (Tile & H_FLIP)
+    {
+        if (tile->RefFNID == 0)
+            tile->RefFNID = createReference(palette->ID);
+    }
+        
+    else if (Tile & V_FLIP)
+    {
+        if (tile->RefNFID == 0)
+            tile->RefNFID = createReference(palette->ID);
+    }
 
-    if (Tile & V_FLIP)
-        tile->UsedWithVFlip = TRUE;
-
+    else
+    {
+        if (tile->RefNNID == 0)
+            tile->RefNNID = createReference(palette->ID);
+    }
+    
     // Check if it is time to capture more reference screenshots
 
     if (tile->LastSeenOnFrame != IPPU.TotalEmulatedFrames)
@@ -144,10 +168,13 @@ void xgfxCaptureTileAndPalette(
         tile->SeenOnFrames++;
 
         if (tile->SeenOnFrames == 10)
-            createReference(tile->ID, palette->ID);
+            tile->Ref10ID = createReference(palette->ID);
 
         else if (tile->SeenOnFrames == 100)
-            createReference(tile->ID, palette->ID);
+            tile->Ref100ID = createReference(palette->ID);
+
+        else if (tile->SeenOnFrames == 1000)
+            tile->Ref1000ID = createReference(palette->ID);
     }
 
     // Update the palettes used by this tile
@@ -188,7 +215,7 @@ void xgfxDumpReferenceAsJson(ReferenceDump & ref, std::ostream & o, std::string 
 {
     o << indent << "{";
     o << "\"ID\": " << ref.ID;
-    o << "," << " \"TileID\": " << ref.TileID;
+    o << "," << " \"Tile\": " << ref.Tile;
     o << "," << " \"ScreenshotID\": " << ref.ScreenshotID;
     o << "," << " \"Frame\": " << ref.Frame;
     o << "," << " \"X\": " << ref.X;
@@ -209,7 +236,14 @@ void xgfxDumpTileAsJson(TileDump & tile, std::ostream & o, std::string indent)
     o << indent << "{";
 
     o << std::endl << indent << "  \"ID\": " << tile.ID;
-    o << "," << std::endl << indent << "  \"Tile\": " << tile.Tile;
+    o << "," << std::endl << indent << "  \"Ref1ID\": " << tile.Ref1ID;
+    o << "," << std::endl << indent << "  \"Ref10ID\": " << tile.Ref10ID;
+    o << "," << std::endl << indent << "  \"Ref100ID\": " << tile.Ref100ID;
+    o << "," << std::endl << indent << "  \"Ref1000ID\": " << tile.Ref1000ID;
+    o << "," << std::endl << indent << "  \"RefNNID\": " << tile.RefNNID;
+    o << "," << std::endl << indent << "  \"RefNFID\": " << tile.RefNFID;
+    o << "," << std::endl << indent << "  \"RefFNID\": " << tile.RefFNID;
+    o << "," << std::endl << indent << "  \"RefFFID\": " << tile.RefFFID;
 
     o << "," << std::endl << indent << "  \"Pixels\": [" << int(tile.Pixels[0]);
     for (uint32 i=1;i!=64;++i)
@@ -232,8 +266,6 @@ void xgfxDumpTileAsJson(TileDump & tile, std::ostream & o, std::string indent)
     o << "," << std::endl << indent << "  \"PalettesSeen\": " << tile.PalettesUsed.size();
     o << "," << std::endl << indent << "  \"UsedInBackground\": " << (tile.UsedInBackground==TRUE?"true":"false");
     o << "," << std::endl << indent << "  \"UsedInSprite\": " << (tile.UsedInSprite==TRUE?"true":"false");
-    o << "," << std::endl << indent << "  \"UsedWithHFlip\": " << (tile.UsedWithHFlip==TRUE?"true":"false");
-    o << "," << std::endl << indent << "  \"UsedWithVFlip\": " << (tile.UsedWithVFlip==TRUE?"true":"false");
 
     o << std::endl << indent << "}";
 }

@@ -144,12 +144,12 @@ struct PaletteDump
 
 struct ReferenceDump
 {
-	int32 ID;            // A unique identifier for this Reference
-	int32 TileID;        // Id of the tile that this reference represents.     
-	int32 ScreenshotID;  // Id of screenshot with the first frame it appeared, as XGFX.ScreenshotID
-	int32 Frame; // Number of first frame it appeared, as IPPU.TotalEmulatedFrames
-	int32 X;     // X coordinate in the screenshot
-	int32 Y;     // Y coordinate in the screenshot
+	int32  ID;            // A unique identifier for this Reference
+	uint32 Tile;          // The Tile code used when this reference was captured
+	int32  ScreenshotID;  // Id of screenshot with the first frame it appeared, as XGFX.ScreenshotID
+	int32  Frame; // Number of first frame it appeared, as IPPU.TotalEmulatedFrames
+	int32  X;     // X coordinate in the screenshot
+	int32  Y;     // Y coordinate in the screenshot
 	uint32 StartLine; // The StartLine received by the Draw function
 	uint32 LineCount; // The LineCount received by the Draw function
 	uint32 ColorPaletteID; // Number of the color palette used to paint the tile
@@ -165,15 +165,22 @@ struct TileDump // A struct to capture and dump tiles during the game execution
 	std::unordered_map<int32, int32> PalettesUsed; // Memorizes the palette colors and frequency they were used
 
 	uint32    ID;                // A unique identifier for this tile
-	uint32    Tile;              // The Tile reference that generated this Dump
 	uint8     Pixels[64];        // The pixel colors before conversion to RGB, represented as color palette indexes.
 	uint32    PaletteSize;       // The number of colors it uses in the palette. May be 1<<2, 1<<4, or 1<<8.
 	uint32    LastSeenOnFrame;   // Number from IPPU.TotalEmulatedFrames
 	uint32    SeenOnFrames;      // Number of different frames it was seen, used to capture reference screenshots;
 	bool8     UsedInSprite;      // Indicates this tile was used to paint a sprite
 	bool8     UsedInBackground;  // Indicates this tile was used to paint a background
-	bool8     UsedWithHFlip;     // Indicates this tile was used with H_FLIP bit when painted
-	bool8     UsedWithVFlip;     // Indicates this tile was used with V_FLIP bit when painted
+
+	// Id of reference captured by this tile
+	int32 Ref1ID;
+	int32 Ref10ID;
+	int32 Ref100ID;
+	int32 Ref1000ID;
+	int32 RefNNID;
+	int32 RefFNID;
+	int32 RefNFID;
+	int32 RefFFID;
 };
 
 struct SBG
