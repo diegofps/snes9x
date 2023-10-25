@@ -73,6 +73,8 @@ void xgfxCaptureTileAndPalette(
         ref->StartLine = StartLine;
         ref->LineCount = LineCount;
         ref->ColorPaletteID = colorPaletteID;
+        ref->HFlip = Tile & H_FLIP;
+        ref->VFlip = Tile & V_FLIP;
         ref->MATH = MATH;
         ref->PIXEL = PIXEL;
         ref->OP = OP;
@@ -222,6 +224,8 @@ void xgfxDumpReferenceAsJson(ReferenceDump & ref, std::ostream & o, std::string 
     o << "," << " \"Y\": " << ref.Y;
     o << "," << " \"StartLine\": " << ref.StartLine;
     o << "," << " \"LineCount\": " << ref.LineCount;
+    o << "," << " \"HFlip\": " << (ref.HFlip==TRUE?"true":"false");
+    o << "," << " \"VFlip\": " << (ref.VFlip==TRUE?"true":"false");
     o << "," << " \"MATH\": \"" << ref.MATH << "\"";
     o << "," << " \"PIXEL\": \"" << ref.PIXEL << "\"";
     o << "," << " \"OP\": \"" << ref.OP << "\"";

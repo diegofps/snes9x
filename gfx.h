@@ -139,7 +139,6 @@ struct PaletteDump
 		Frequency = 1;
 		ID = id;
 	}
-
 };
 
 struct ReferenceDump
@@ -153,6 +152,8 @@ struct ReferenceDump
 	uint32 StartLine; // The StartLine received by the Draw function
 	uint32 LineCount; // The LineCount received by the Draw function
 	uint32 ColorPaletteID; // Number of the color palette used to paint the tile
+	bool8     HFlip;      // Indicates this tile was flipped horizontally
+	bool8     VFlip;      // Indicates this tile was flipped vertically
 	const char * MATH;    // Name of the MATH type used
 	const char * PIXEL;   // Name of the PIEL type used
 	const char * OP;      // Name of the OP type used
