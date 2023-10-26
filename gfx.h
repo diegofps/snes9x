@@ -110,6 +110,9 @@ struct SXGFX;
 
 struct SXGFX // The High Definition Virtual Screen
 {
+	// A buffer to accelerate dump writes
+	std::vector<char> DumpIOBuffer;
+
 	std::unordered_map<std::string, PaletteDump*> DumpedPalettes;
 	std::unordered_map<std::string, TileDump*> DumpedTiles;
 	std::vector<ReferenceDump*> DumpedReferences;
@@ -123,6 +126,9 @@ struct SXGFX // The High Definition Virtual Screen
 	uint32  PaletteID;    // Number to identify palettes, in each execution.
 	uint32  TileID;       // Number to identify the tile, in each execution.
 	uint32  ReferenceID;  // Number to identify the reference, in each execution.
+
+	// We preallocate a large buffer to accelerate dump writes
+	SXGFX() : DumpIOBuffer(10*1024*1024) { }
 };
 
 struct PaletteDump
@@ -152,8 +158,8 @@ struct ReferenceDump
 	uint32 StartLine; // The StartLine received by the Draw function
 	uint32 LineCount; // The LineCount received by the Draw function
 	uint32 ColorPaletteID; // Number of the color palette used to paint the tile
-	bool8     HFlip;      // Indicates this tile was flipped horizontally
-	bool8     VFlip;      // Indicates this tile was flipped vertically
+	bool8  HFlip;      // Indicates this tile was flipped horizontally
+	bool8  VFlip;      // Indicates this tile was flipped vertically
 	const char * MATH;    // Name of the MATH type used
 	const char * PIXEL;   // Name of the PIEL type used
 	const char * OP;      // Name of the OP type used
@@ -175,9 +181,10 @@ struct TileDump // A struct to capture and dump tiles during the game execution
 
 	// Id of reference captured by this tile
 	int32 Ref1ID;
-	int32 Ref10ID;
+	int32 Ref25ID;
+	int32 Ref50ID;
+	int32 Ref75ID;
 	int32 Ref100ID;
-	int32 Ref1000ID;
 	int32 RefNNID;
 	int32 RefFNID;
 	int32 RefNFID;

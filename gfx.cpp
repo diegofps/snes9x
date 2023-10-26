@@ -231,23 +231,32 @@ void S9xEndScreenRefresh (void)
 
 			if (IPPU.TotalEmulatedFrames % 300 == 0)
 			{
-				std::string filepathTiles = S9xContextualizeFilename("", "tiles.json");
-				std::cout << "Dumping tiles to " << filepathTiles << std::endl;
-				std::ofstream outTiles(filepathTiles.c_str(), std::ofstream::out);
-				if (!outTiles.good()) std::cout << "WARN: Could not dump tiles";
-				else xgfxDumpTilesAsJson(outTiles);
+				{
+					std::string filepathTiles = S9xContextualizeFilename("", "tiles.json");
+					std::cout << "Dumping tiles to " << filepathTiles << std::endl;
+					std::ofstream outTiles(filepathTiles.c_str(), std::ofstream::out);
+					outTiles.rdbuf()->pubsetbuf(&XGFX.DumpIOBuffer.front(), XGFX.DumpIOBuffer.size());
+					if (!outTiles.good()) std::cout << "WARN: Could not dump tiles";
+					else xgfxDumpTilesAsJson(outTiles);
+				}
 
-				std::string filepathPalettes = S9xContextualizeFilename("", "palettes.json");
-				std::cout << "Dumping palettes to " << filepathPalettes << std::endl;
-				std::ofstream outPalettes(filepathPalettes.c_str(), std::ofstream::out);
-				if (!outPalettes.good()) std::cout << "WARN: Could not dump palettes";
-				else xgfxDumpPalettesAsJson(outPalettes);
+				{
+					std::string filepathPalettes = S9xContextualizeFilename("", "palettes.json");
+					std::cout << "Dumping palettes to " << filepathPalettes << std::endl;
+					std::ofstream outPalettes(filepathPalettes.c_str(), std::ofstream::out);
+					outPalettes.rdbuf()->pubsetbuf(&XGFX.DumpIOBuffer.front(), XGFX.DumpIOBuffer.size());
+					if (!outPalettes.good()) std::cout << "WARN: Could not dump palettes";
+					else xgfxDumpPalettesAsJson(outPalettes);
+				}
 
-				std::string filepathReferences = S9xContextualizeFilename("", "references.json");
-				std::cout << "Dumping references to " << filepathReferences << std::endl;
-				std::ofstream outReferences(filepathReferences.c_str(), std::ofstream::out);
-				if (!outReferences.good()) std::cout << "WARN: Could not dump references";
-				else xgfxDumpReferencesAsJson(outReferences);
+				{
+					std::string filepathReferences = S9xContextualizeFilename("", "references.json");
+					std::cout << "Dumping references to " << filepathReferences << std::endl;
+					std::ofstream outReferences(filepathReferences.c_str(), std::ofstream::out);
+					outReferences.rdbuf()->pubsetbuf(&XGFX.DumpIOBuffer.front(), XGFX.DumpIOBuffer.size());
+					if (!outReferences.good()) std::cout << "WARN: Could not dump references";
+					else xgfxDumpReferencesAsJson(outReferences);
+				}
 			}
 			
 			if (XGFX.TakeReferenceScreenshot)

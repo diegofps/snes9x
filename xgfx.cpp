@@ -116,9 +116,10 @@ void xgfxCaptureTileAndPalette(
         tile->UsedInSprite = FALSE;
 
         tile->Ref1ID = createReference(palette->ID);
-        tile->Ref10ID = 0;
+        tile->Ref25ID = 0;
+        tile->Ref50ID = 0;
+        tile->Ref75ID = 0;
         tile->Ref100ID = 0;
-        tile->Ref1000ID = 0;
         tile->RefNNID = 0;
         tile->RefNFID = 0;
         tile->RefFNID = 0;
@@ -169,14 +170,17 @@ void xgfxCaptureTileAndPalette(
         tile->LastSeenOnFrame = IPPU.TotalEmulatedFrames;
         tile->SeenOnFrames++;
 
-        if (tile->SeenOnFrames == 10)
-            tile->Ref10ID = createReference(palette->ID);
+        if (tile->SeenOnFrames == 25)
+            tile->Ref25ID = createReference(palette->ID);
+
+        else if (tile->SeenOnFrames == 50)
+            tile->Ref50ID = createReference(palette->ID);
+
+        else if (tile->SeenOnFrames == 75)
+            tile->Ref75ID = createReference(palette->ID);
 
         else if (tile->SeenOnFrames == 100)
             tile->Ref100ID = createReference(palette->ID);
-
-        else if (tile->SeenOnFrames == 1000)
-            tile->Ref1000ID = createReference(palette->ID);
     }
 
     // Update the palettes used by this tile
@@ -241,9 +245,10 @@ void xgfxDumpTileAsJson(TileDump & tile, std::ostream & o, std::string indent)
 
     o << std::endl << indent << "  \"ID\": " << tile.ID;
     o << "," << std::endl << indent << "  \"Ref1ID\": " << tile.Ref1ID;
-    o << "," << std::endl << indent << "  \"Ref10ID\": " << tile.Ref10ID;
+    o << "," << std::endl << indent << "  \"Ref25ID\": " << tile.Ref25ID;
+    o << "," << std::endl << indent << "  \"Ref50ID\": " << tile.Ref50ID;
+    o << "," << std::endl << indent << "  \"Ref75ID\": " << tile.Ref75ID;
     o << "," << std::endl << indent << "  \"Ref100ID\": " << tile.Ref100ID;
-    o << "," << std::endl << indent << "  \"Ref1000ID\": " << tile.Ref1000ID;
     o << "," << std::endl << indent << "  \"RefNNID\": " << tile.RefNNID;
     o << "," << std::endl << indent << "  \"RefNFID\": " << tile.RefNFID;
     o << "," << std::endl << indent << "  \"RefFNID\": " << tile.RefFNID;
